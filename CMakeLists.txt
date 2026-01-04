@@ -10,6 +10,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Enable Position Independent Code for all targets
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # ------------------------------------------------------
 # Dependencies via FetchContent
 # ------------------------------------------------------
@@ -27,6 +30,7 @@ FetchContent_Declare(
 )
 set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
 set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
+set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(spdlog)
 
 # ---------- croncpp ----------
@@ -40,14 +44,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(croncpp)
 
+# ---------- nlohmann_json ----------
 find_package(nlohmann_json QUIET)
 if(NOT nlohmann_json_FOUND)
     message(STATUS "nlohmann/json not found, fetching from GitHub...")
-    include(FetchContent)
     FetchContent_Declare(
             nlohmann_json
             GIT_REPOSITORY https://github.com/nlohmann/json.git
             GIT_TAG v3.11.3
+            GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(nlohmann_json)
     message(STATUS "nlohmann/json fetched successfully")
@@ -92,6 +97,11 @@ target_link_libraries(nexus_core
         PRIVATE
         spdlog::spdlog
         nlohmann_json::nlohmann_json
+)
+
+# Ensure PIC is enabled for nexus_core
+set_target_properties(nexus_core PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
 )
 
 # Windows export macros
