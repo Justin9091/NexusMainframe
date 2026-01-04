@@ -104,11 +104,20 @@ set_target_properties(nexus_core PROPERTIES
         POSITION_INDEPENDENT_CODE ON
 )
 
-# Windows export macros
+# Platform-specific settings
 if(WIN32)
+    # Windows export macros
     target_compile_definitions(nexus_core
             PRIVATE NEXUS_CORE_EXPORTS
             INTERFACE NEXUS_CORE_IMPORTS
+    )
+
+    # Set Windows-specific properties
+    set_target_properties(nexus_core PROPERTIES
+            WINDOWS_EXPORT_ALL_SYMBOLS ON
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
     )
 endif()
 
