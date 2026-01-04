@@ -1,0 +1,120 @@
+cmake_minimum_required(VERSION 3.20)
+project(NexusMainFrame VERSION 1.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Dependencies
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.13.0
+)
+FetchContent_MakeAvailable(spdlog)
+
+# ----------------------------------------------------------------------------
+# Core library
+# ----------------------------------------------------------------------------
+add_library(nexus_core SHARED
+    Logger/Logger.cpp
+    Logger/Logger.hpp
+    Event/EventBus.cpp
+    Event/EventBus.hpp
+)
+
+target_include_directories(nexus_core
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<INSTALL_INTERFACE:include/nexus>
+)
+
+target_link_libraries(nexus_core PRIVATE spdlog::spdlog_header_only)
+
+if(WIN32)
+    target_compile_definitions(nexus_core PRIVATE NEXUS_CORE_EXPORTS)
+    target_compile_definitions(nexus_core INTERFACE NEXUS_CORE_IMPORTS)
+endif()
+
+if(MSVC)
+    target_compile_options(nexus_core PRIVATE /W4)
+else()
+    target_compile_options(nexus_core PRIVATE -Wall -Wextra -Wpedantic -fvisibility=default)
+endif()
+
+# ----------------------------------------------------------------------------
+# Module interface library
+# ----------------------------------------------------------------------------
+add_library(nexus_module_interface INTERFACE)
+target_link_libraries(nexus_module_interface INTERFACE nexus_core)
+
+# ----------------------------------------------------------------------------
+# Main executable
+# ----------------------------------------------------------------------------
+add_executable(NexusMainFrame
+    main.cpp
+    NexusMainFrame.cpp
+    NexusMainFrame.hpp
+    Modules/IModule.hpp
+    Modules/ModuleLoader.cpp
+    Modules/ModuleLoader.hpp
+)
+
+target_link_libraries(NexusMainFrame PRIVATE nexus_core)
+
+if(MSVC)
+    target_compile_options(NexusMainFrame PRIVATE /W4)
+else()
+    target_compile_options(NexusMainFrame PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# ----------------------------------------------------------------------------
+# SDK Installation
+# ----------------------------------------------------------------------------
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+# Installeer binaries
+install(TARGETS nexus_core nexus_module_interface
+    EXPORT NexusCoreTargets
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+# Installeer headers
+install(DIRECTORY
+    Logger/
+    Event/
+    Modules/
+    DESTINATION include/nexus
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+)
+
+# Export targets
+install(EXPORT NexusCoreTargets
+    FILE NexusCoreTargets.cmake
+    NAMESPACE Nexus::
+    DESTINATION lib/cmake/NexusCore
+)
+
+# Config file
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/NexusCoreConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/NexusCoreConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/NexusCore
+)
+
+# Version file
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/NexusCoreConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+# Installeer config files
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/NexusCoreConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/NexusCoreConfigVersion.cmake"
+    DESTINATION lib/cmake/NexusCore
+)
