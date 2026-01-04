@@ -27,9 +27,9 @@ Prerequisites:
 - CMake 3.20+
 - Git
 
-```sh
-Build & Run
-bashgit clone https://github.com/Justin9091/NexusMainframe.git
+## Build & Run
+```bash
+git clone https://github.com/Justin9091/NexusMainframe.git
 cd NexusMainframe
 mkdir build && cd build
 cmake ..
@@ -44,7 +44,3 @@ TODO
 
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-<div align="center">
-  Made with ❤️ by Justin9091
-</div>
