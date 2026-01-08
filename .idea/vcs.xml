@@ -3,9 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/croncpp-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/libcron-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/libcron-src/libcron/externals/date" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/libcron-src/test/externals/Catch2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/nlohmann_json-src" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/cmake-build-debug/_deps/spdlog-src" vcs="Git" />
   </component>
 </project>

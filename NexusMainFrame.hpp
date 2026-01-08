@@ -5,6 +5,7 @@
 #include <atomic>
 
 #include "Event/EventBus.hpp"
+#include "IPC/CommandServer.hpp"
 #include "Modules/ModuleLoader.hpp"
 #include "Scheduler/Scheduler.hpp"
 
@@ -14,6 +15,7 @@ private:
     std::atomic<bool> _running{true};
     Scheduler _scheduler;
     EventBus _eventBus;
+    CommandServer _server;
 
 public:
     void run();
