@@ -82,6 +82,9 @@ add_library(nexus_core SHARED
         Config/Provider/ConfigProvider.cpp
         Config/Source/JsonConfigSource.hpp
         Config/Source/JsonConfigSource.cpp
+        Result/Result.hpp
+        IPC/CommandServer.cpp
+        IPC/CommandServer.hpp
 )
 
 # Include directories
@@ -107,6 +110,8 @@ set_target_properties(nexus_core PROPERTIES
 # Platform-specific settings
 if(WIN32)
     # Windows export macros
+    target_link_libraries(nexus_core PRIVATE ws2_32)
+
     target_compile_definitions(nexus_core
             PRIVATE NEXUS_CORE_EXPORTS
             INTERFACE NEXUS_CORE_IMPORTS
@@ -136,7 +141,13 @@ target_include_directories(nexus_module_interface
 # ------------------------------------------------------
 add_executable(NexusMainFrame main.cpp)
 target_link_libraries(NexusMainFrame PRIVATE nexus_core)
-
+# Na add_executable(NexusMainFrame main.cpp)
+add_custom_command(TARGET NexusMainFrame POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:nexus_core>
+        $<TARGET_FILE_DIR:NexusMainFrame>
+        COMMENT "Copying nexus_core DLL to executable directory"
+)
 # ------------------------------------------------------
 # Export targets for external modules
 # ------------------------------------------------------

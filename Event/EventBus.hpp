@@ -11,6 +11,7 @@
 #include <atomic>
 
 #include "Logger/Logger.hpp"
+#include "Result/Result.hpp"
 
 struct Event {
     std::string name;
@@ -19,9 +20,11 @@ struct Event {
 
 class EventBus {
 public:
-    using Callback = std::function<void(const Event&)>;
+    using VoidCallback = std::function<void(const Event&)>;
+    using ResultCallback = std::function<Result(const Event&)>;
 
-    int subscribe(const std::string& eventName, Callback cb);
+    int subscribe(const std::string& eventName, VoidCallback cb);
+    int subscribe(const std::string& eventName, ResultCallback cb);
     void unsubscribe(const std::string& eventName, int id);
     void publish(const Event& event);
     void dispatchPending();
@@ -31,7 +34,7 @@ public:
 private:
     struct Listener {
         int id;
-        Callback cb;
+        VoidCallback cb;  // Gewoon één type!
     };
 
     Logger _logger{"EventBus"};

@@ -2,10 +2,10 @@
 #include <algorithm>
 #include <iostream>
 
-int EventBus::subscribe(const std::string &eventName, Callback cb) {
+int EventBus::subscribe(const std::string &eventName, VoidCallback cb) {
     std::lock_guard<std::mutex> lock(mtx);
     if (isShuttingDown) {
-        return -1; // Registreer niet tijdens shutdown
+        return -1;
     }
     int id = nextId++;
     listeners[eventName].push_back({id, std::move(cb)});
@@ -20,6 +20,16 @@ int EventBus::subscribe(const std::string &eventName, Callback cb) {
     return id;
 }
 
+int EventBus::subscribe(const std::string &eventName, ResultCallback cb) {
+    // Wrap ResultCallback in een VoidCallback
+    return subscribe(eventName, [cb = std::move(cb), this, eventName](const Event& event) {
+        Result result = cb(event);
+        if (result != Result::SUCCESS) {
+            _logger.logWarning("Result callback returned non-SUCCESS for event " + eventName);
+        }
+    });
+}
+
 void EventBus::unsubscribe(const std::string &eventName, int id) {
     std::lock_guard<std::mutex> lock(mtx);
     auto it = listeners.find(eventName);
@@ -30,7 +40,6 @@ void EventBus::unsubscribe(const std::string &eventName, int id) {
 
         _logger.logInfo("Unsubscribed from event: " + eventName + " (ID: " + std::to_string(id) + ")");
 
-        // Verwijder lege entries om geheugen te besparen
         if (vec.empty()) {
             listeners.erase(it);
         }
@@ -62,8 +71,8 @@ void EventBus::dispatchPending() {
     while (!temp.empty()) {
         const auto &event = temp.front();
 
-        // Kopieer alleen callbacks, niet hele Listener structs
-        std::vector<Callback> callbacksCopy;
+        // Kopieer alleen callbacks
+        std::vector<VoidCallback> callbacksCopy;
         {
             std::lock_guard<std::mutex> lock(mtx);
             auto it = listeners.find(event.name);
@@ -103,12 +112,10 @@ void EventBus::shutdown() {
 
     _logger.logInfo("Shutting down (clearing " + std::to_string(eventQueue.size()) + " queued events)");
 
-    // Clear queue efficiënt
     while (!eventQueue.empty()) {
         eventQueue.pop();
     }
 
-    // Optioneel: clear listeners ook
     listeners.clear();
 }
 
