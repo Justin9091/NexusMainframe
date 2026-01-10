@@ -94,6 +94,19 @@ endif()
 if(ENABLE_COVERAGE)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         message(STATUS "Enabling coverage reporting")
+        add_compile_options(--coverage -fprofile-arcs -ftest-coverage)
+        add_link_options(--coverage)
+    else()
+        message(WARNING "Coverage reporting only supported with GCC or Clang")
+    endif()
+endif()
+
+# ------------------------------------------------------
+# Coverage settings
+# ------------------------------------------------------
+if(ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(STATUS "Enabling coverage reporting")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
     else()
