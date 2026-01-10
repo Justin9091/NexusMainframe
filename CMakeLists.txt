@@ -136,6 +136,8 @@ target_link_libraries(nexus_core
         nlohmann_json::nlohmann_json
 )
 
+include_directories(includes)
+
 # Ensure PIC is enabled for nexus_core
 set_target_properties(nexus_core PROPERTIES
         POSITION_INDEPENDENT_CODE ON
