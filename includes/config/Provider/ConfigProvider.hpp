@@ -9,7 +9,7 @@
 #include <optional>
 #include <string>
 
-#include "Config/Source/IConfigSource.hpp"
+#include "config/Source/IConfigSource.hpp"
 
 class ConfigProvider {
 private:
