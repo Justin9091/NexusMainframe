@@ -110,11 +110,11 @@ add_library(nexus_core SHARED
         includes/Task/ITask.hpp
         src/scheduler/Scheduler.cpp
         src/config/ConfigProviderFactory.cpp
-        includes/Config/ConfigProviderFactory.hpp
-        includes/Config/Provider/ConfigProvider.hpp
-        includes/Config/Source/IConfigSource.hpp
+        includes/config/ConfigProviderFactory.hpp
+        includes/config/Provider/ConfigProvider.hpp
+        includes/config/Source/IConfigSource.hpp
         src/config/provider/ConfigProvider.cpp
-        includes/Config/Source/JsonConfigSource.hpp
+        includes/config/Source/JsonConfigSource.hpp
         src/config/source/JsonConfigSource.cpp
         includes/Result/Result.hpp
         src/ipc/CommandServer.cpp
