@@ -14,6 +14,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ------------------------------------------------------
+# Options
+# ------------------------------------------------------
+option(BUILD_TESTING "Build tests" OFF)
+option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
+
+# ------------------------------------------------------
 # Dependencies via FetchContent
 # ------------------------------------------------------
 include(FetchContent)
@@ -60,31 +66,59 @@ else()
     message(STATUS "Using system nlohmann/json")
 endif()
 
+# ---------- Catch2 (only if testing is enabled) ----------
+if(BUILD_TESTING)
+    message(STATUS "Fetching Catch2 from GitHub...")
+    FetchContent_Declare(
+            Catch2
+            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+            GIT_TAG v3.5.1
+            GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(Catch2)
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    include(CTest)
+    include(Catch)
+endif()
+
+# ------------------------------------------------------
+# Coverage settings
+# ------------------------------------------------------
+if(ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(STATUS "Enabling coverage reporting")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+    else()
+        message(WARNING "Coverage reporting only supported with GCC or Clang")
+    endif()
+endif()
+
 # ------------------------------------------------------
 # Core library
 # ------------------------------------------------------
 add_library(nexus_core SHARED
-        Logger/Logger.hpp
-        Event/EventBus.hpp
-        Event/EventBus.cpp
-        Modules/IModule.hpp
-        Modules/ModuleLoader.cpp
-        Modules/ModuleLoader.hpp
+        includes/Logger/Logger.hpp
+        includes/Event/EventBus.hpp
+        src/event/EventBus.cpp
+        includes/Modules/IModule.hpp
+        src/modules/ModuleLoader.cpp
+        includes/Modules/ModuleLoader.hpp
         NexusMainFrame.cpp
         NexusMainFrame.hpp
-        Scheduler/Scheduler.hpp
-        Task/ITask.hpp
-        Scheduler/Scheduler.cpp
-        Config/ConfigProviderFactory.cpp
-        Config/ConfigProviderFactory.hpp
-        Config/Provider/ConfigProvider.hpp
-        Config/Source/IConfigSource.hpp
-        Config/Provider/ConfigProvider.cpp
-        Config/Source/JsonConfigSource.hpp
-        Config/Source/JsonConfigSource.cpp
-        Result/Result.hpp
-        IPC/CommandServer.cpp
-        IPC/CommandServer.hpp
+        includes/Scheduler/Scheduler.hpp
+        includes/Task/ITask.hpp
+        src/scheduler/Scheduler.cpp
+        src/config/ConfigProviderFactory.cpp
+        includes/Config/ConfigProviderFactory.hpp
+        includes/Config/Provider/ConfigProvider.hpp
+        includes/Config/Source/IConfigSource.hpp
+        src/config/provider/ConfigProvider.cpp
+        includes/Config/Source/JsonConfigSource.hpp
+        src/config/source/JsonConfigSource.cpp
+        includes/Result/Result.hpp
+        src/ipc/CommandServer.cpp
+        includes/IPC/CommandServer.hpp
 )
 
 # Include directories
@@ -141,13 +175,22 @@ target_include_directories(nexus_module_interface
 # ------------------------------------------------------
 add_executable(NexusMainFrame main.cpp)
 target_link_libraries(NexusMainFrame PRIVATE nexus_core)
-# Na add_executable(NexusMainFrame main.cpp)
+
+# Copy DLL to executable directory
 add_custom_command(TARGET NexusMainFrame POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:nexus_core>
         $<TARGET_FILE_DIR:NexusMainFrame>
         COMMENT "Copying nexus_core DLL to executable directory"
 )
+
+# ------------------------------------------------------
+# Tests
+# ------------------------------------------------------
+if(BUILD_TESTING)
+    add_subdirectory(tests)
+endif()
+
 # ------------------------------------------------------
 # Export targets for external modules
 # ------------------------------------------------------
