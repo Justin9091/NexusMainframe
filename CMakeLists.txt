@@ -16,7 +16,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # ------------------------------------------------------
 # Options
 # ------------------------------------------------------
-option(BUILD_TESTING "Build tests" OFF)
+option(BUILD_TESTING "Build tests" ON)
 option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
 # ------------------------------------------------------
@@ -68,15 +68,22 @@ endif()
 
 # ---------- Catch2 (only if testing is enabled) ----------
 if(BUILD_TESTING)
-    message(STATUS "Fetching Catch2 from GitHub...")
-    FetchContent_Declare(
-            Catch2
-            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-            GIT_TAG v3.5.1
-            GIT_SHALLOW TRUE
-    )
-    FetchContent_MakeAvailable(Catch2)
-    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    find_package(Catch2 3 QUIET)
+
+    if(NOT Catch2_FOUND)
+        message(STATUS "Catch2 not found, fetching from GitHub...")
+        FetchContent_Declare(
+                Catch2
+                GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+                GIT_TAG v3.5.1
+                GIT_SHALLOW TRUE
+        )
+        FetchContent_MakeAvailable(Catch2)
+        list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    else()
+        message(STATUS "Using system Catch2")
+    endif()
+
     include(CTest)
     include(Catch)
 endif()
@@ -190,7 +197,50 @@ add_custom_command(TARGET NexusMainFrame POST_BUILD
 # Tests
 # ------------------------------------------------------
 if(BUILD_TESTING)
-    add_subdirectory(tests)
+    add_executable(nexus_tests
+            tests/config/source/JsonConfigSourceTests.cpp
+    )
+
+    target_link_libraries(nexus_tests
+            PRIVATE
+            nexus_core
+            Catch2::Catch2WithMain
+    )
+
+    target_include_directories(nexus_tests
+            PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}
+            ${CMAKE_CURRENT_SOURCE_DIR}/includes
+    )
+
+    # Platform-specific settings for tests
+    if(WIN32)
+        # Copy nexus_core DLL to test directory
+        add_custom_command(TARGET nexus_tests POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:nexus_core>
+                $<TARGET_FILE_DIR:nexus_tests>
+                COMMENT "Copying nexus_core DLL to test directory"
+        )
+    endif()
+
+    # Set output directory for better organization
+    set_target_properties(nexus_tests PROPERTIES
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
+    )
+
+    # Register tests with CTest
+    catch_discover_tests(nexus_tests
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
+    )
+
+    # Add custom target to run tests
+    add_custom_target(run_tests
+            COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
+            DEPENDS nexus_tests
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Running all tests"
+    )
 endif()
 
 # ------------------------------------------------------
