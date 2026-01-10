@@ -1,7 +1,7 @@
 //
 // Created by jusra on 4-1-2026.
 //
-#include "JsonConfigSource.hpp"
+#include "../../../includes/config/Source/JsonConfigSource.hpp"
 
 #include <fstream>
 #include <stdexcept>

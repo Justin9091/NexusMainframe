@@ -1,7 +1,7 @@
 //
 // Created by jusra on 4-1-2026.
 //
-#include "ConfigProvider.hpp"
+#include "../../../includes/config/Provider/ConfigProvider.hpp"
 
 ConfigProvider::ConfigProvider(std::unique_ptr<IConfigSource> source)
     : source_(std::move(source)) {}

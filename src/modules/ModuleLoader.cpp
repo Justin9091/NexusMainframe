@@ -2,7 +2,7 @@
 // Created by jusra on 29-12-2025.
 //
 
-#include "ModuleLoader.hpp"
+#include "../../includes/Modules/ModuleLoader.hpp"
 
 #include <algorithm>
 #include <iostream>

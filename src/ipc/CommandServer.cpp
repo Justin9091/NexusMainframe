@@ -1,4 +1,4 @@
-#include "CommandServer.hpp"
+#include "../../includes/IPC/CommandServer.hpp"
 #include <sstream>
 #include <cstring>
 

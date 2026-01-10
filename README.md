@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Resources/logo.png" alt="Logo" title="Logo" width="300">
+  <img src="resources/logo.png" alt="Logo" title="Logo" width="300">
 
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Justin9091/NexusMainframe/cmake-multi-platform.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/Justin9091/NexusMainframe/actions)

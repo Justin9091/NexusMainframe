@@ -7,9 +7,35 @@ on:
     branches: [ "main" ]
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install clang-tidy and clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-tidy clang-format
+
+      - name: Run clang-format check
+        run: |
+          find src include -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | xargs clang-format --dry-run --Werror
+
+      - name: Configure CMake for clang-tidy
+        run: |
+          cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Run clang-tidy
+        run: |
+          find src -name '*.cpp' | xargs clang-tidy -p build
+
   build:
+    needs: lint
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -35,40 +61,61 @@ jobs:
             c_compiler: cl
 
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Set reusable strings
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+      - name: Set reusable strings
+        id: strings
+        shell: bash
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Install Linux dependencies
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y build-essential cmake
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake lcov
 
-    - name: Configure CMake
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -S ${{ github.workspace }}
+      - name: Configure CMake
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DENABLE_TESTING=ON
+          -DENABLE_COVERAGE=${{ matrix.c_compiler == 'gcc' && 'ON' || 'OFF' }}
+          -S ${{ github.workspace }}
 
-    - name: Build
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
+      - name: Build
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Verify build artifacts
-      shell: bash
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: |
-        echo "Build completed successfully"
-        if [ "$RUNNER_OS" == "Windows" ]; then
-          ls -la ${{ matrix.build_type }}/ || ls -la .
-        else
-          ls -la
-        fi
+      - name: Run tests
+        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        run: ctest --output-on-failure -C ${{ matrix.build_type }}
+
+      - name: Generate coverage report
+        if: matrix.c_compiler == 'gcc' && runner.os == 'Linux'
+        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        run: |
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info
+          lcov --list coverage.info
+
+      - name: Upload coverage to Codecov
+        if: matrix.c_compiler == 'gcc' && runner.os == 'Linux'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ${{ steps.strings.outputs.build-output-dir }}/coverage.info
+          fail_ci_if_error: false
+
+      - name: Verify build artifacts
+        shell: bash
+        working-directory: ${{ steps.strings.outputs.build-output-dir }}
+        run: |
+          echo "Build completed successfully"
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            ls -la ${{ matrix.build_type }}/ || ls -la .
+          else
+            ls -la
+          fi
