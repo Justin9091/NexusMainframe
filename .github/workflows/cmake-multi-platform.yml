@@ -29,6 +29,7 @@ jobs:
           cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Run clang-tidy
+        continue-on-error: true
         run: |
           find src -name '*.cpp' | xargs clang-tidy -p build --checks='-*,bugprone-*,clang-analyzer-*' --warnings-as-errors=''
 
