@@ -96,21 +96,6 @@ jobs:
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
         run: ctest --output-on-failure -C ${{ matrix.build_type }}
 
-      - name: Generate coverage report
-        if: matrix.c_compiler == 'gcc' && runner.os == 'Linux'
-        working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: |
-          lcov --capture --directory . --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info
-          lcov --list coverage.info
-
-      - name: Upload coverage to Codecov
-        if: matrix.c_compiler == 'gcc' && runner.os == 'Linux'
-        uses: codecov/codecov-action@v4
-        with:
-          files: ${{ steps.strings.outputs.build-output-dir }}/coverage.info
-          fail_ci_if_error: false
-
       - name: Verify build artifacts
         shell: bash
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
