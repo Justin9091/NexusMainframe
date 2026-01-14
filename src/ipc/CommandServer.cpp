@@ -2,6 +2,9 @@
 #include <sstream>
 #include <cstring>
 
+#include "commands/Command.hpp"
+#include "commands/CommandRegistry.hpp"
+
 #ifdef _WIN32
 static bool wsaInitialized = false;
 #endif
@@ -109,12 +112,6 @@ void CommandServer::stop() {
     _logger.logInfo("Command server stopped");
 }
 
-void CommandServer::registerCommand(const std::string& cmd, CommandHandler handler) {
-    std::lock_guard<std::mutex> lock(_handlersMutex);
-    _handlers[cmd] = handler;
-    _logger.logInfo("Registered command: " + cmd);
-}
-
 void CommandServer::acceptLoop() {
     while (_running) {
         struct sockaddr_in clientAddr;
@@ -139,33 +136,39 @@ void CommandServer::acceptLoop() {
 }
 
 void CommandServer::handleClient(SocketType clientSocket) {
-    char buffer[1024];
+    std::string buffer;
+    char temp[1024];
+
+    while (true) {
+#ifdef _WIN32
+        int bytesRead = recv(clientSocket, temp, sizeof(temp) - 1, 0);
+#else
+        ssize_t bytesRead = read(clientSocket, temp, sizeof(temp) - 1);
+#endif
+        if (bytesRead <= 0) break;  // client gesloten of error
+
+        temp[bytesRead] = '\0';
+        buffer += temp;
+
+        // Check voor newline
+        size_t pos;
+        while ((pos = buffer.find_first_of("\r\n")) != std::string::npos) {
+            std::string line = buffer.substr(0, pos);
+            buffer.erase(0, pos + 1);
+
+            // Verwijder extra whitespace
+            while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
+
+            if (!line.empty()) {
+                std::string response = processCommand(line);
 
 #ifdef _WIN32
-    int bytesRead = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+                send(clientSocket, response.c_str(), (int)response.length(), 0);
 #else
-    ssize_t bytesRead = read(clientSocket, buffer, sizeof(buffer) - 1);
+                write(clientSocket, response.c_str(), response.length());
 #endif
-
-    if (bytesRead > 0) {
-        buffer[bytesRead] = '\0';
-        std::string command(buffer);
-
-        // Remove newline/carriage return
-        while (!command.empty() &&
-               (command.back() == '\n' || command.back() == '\r')) {
-            command.pop_back();
+            }
         }
-
-        _logger.logInfo("Received command: " + command);
-
-        std::string response = processCommand(command);
-
-#ifdef _WIN32
-        send(clientSocket, response.c_str(), (int)response.length(), 0);
-#else
-        write(clientSocket, response.c_str(), response.length());
-#endif
     }
 
     CLOSE_SOCKET(clientSocket);
@@ -173,24 +176,18 @@ void CommandServer::handleClient(SocketType clientSocket) {
 
 std::string CommandServer::processCommand(const std::string& input) {
     std::istringstream iss(input);
-    std::string cmd, args;
+    std::string cmd;
     iss >> cmd;
-    std::getline(iss, args);
 
-    // Trim leading space
-    if (!args.empty() && args[0] == ' ') {
-        args = args.substr(1);
+    std::vector<std::string> args;
+    std::string arg;
+    while (iss >> arg) {
+        args.push_back(arg);
     }
 
     std::lock_guard<std::mutex> lock(_handlersMutex);
-    auto it = _handlers.find(cmd);
-    if (it != _handlers.end()) {
-        try {
-            return it->second(args);
-        } catch (const std::exception& e) {
-            return "ERROR: " + std::string(e.what()) + "\n";
-        }
-    }
+    Command* command = CommandRegistry::getInstance().getCommand(cmd);
+    if (!command) return "Command not found: " + cmd;
 
-    return "ERROR: Unknown command: " + cmd + "\n";
+    return command->execute(args);
 }
