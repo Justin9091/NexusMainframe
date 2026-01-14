@@ -9,25 +9,16 @@ project(NexusCore
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-
-# Enable Position Independent Code for all targets
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# ------------------------------------------------------
-# Options
-# ------------------------------------------------------
+# ------------------ Options ------------------
 option(BUILD_TESTING "Build tests" ON)
 option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
-# ------------------------------------------------------
-# Dependencies via FetchContent
-# ------------------------------------------------------
+# ------------------ Dependencies ------------------
 include(FetchContent)
 
-# ---------- spdlog ----------
-set(spdlog_FOUND FALSE)
-message(STATUS "Fetching spdlog from GitHub...")
-
+# spdlog
 FetchContent_Declare(
         spdlog
         GIT_REPOSITORY https://github.com/gabime/spdlog.git
@@ -39,9 +30,7 @@ set(SPDLOG_FMT_EXTERNAL OFF CACHE BOOL "" FORCE)
 set(SPDLOG_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(spdlog)
 
-# ---------- croncpp ----------
-message(STATUS "Fetching croncpp from GitHub...")
-
+# croncpp
 FetchContent_Declare(
         croncpp
         GIT_REPOSITORY https://github.com/mariusbancila/croncpp.git
@@ -50,10 +39,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(croncpp)
 
-# ---------- nlohmann_json ----------
+# nlohmann_json
 find_package(nlohmann_json QUIET)
 if(NOT nlohmann_json_FOUND)
-    message(STATUS "nlohmann/json not found, fetching from GitHub...")
     FetchContent_Declare(
             nlohmann_json
             GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -61,17 +49,12 @@ if(NOT nlohmann_json_FOUND)
             GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(nlohmann_json)
-    message(STATUS "nlohmann/json fetched successfully")
-else()
-    message(STATUS "Using system nlohmann/json")
 endif()
 
-# ---------- Catch2 (only if testing is enabled) ----------
+# Catch2 (tests)
 if(BUILD_TESTING)
     find_package(Catch2 3 QUIET)
-
     if(NOT Catch2_FOUND)
-        message(STATUS "Catch2 not found, fetching from GitHub...")
         FetchContent_Declare(
                 Catch2
                 GIT_REPOSITORY https://github.com/catchorg/Catch2.git
@@ -80,43 +63,12 @@ if(BUILD_TESTING)
         )
         FetchContent_MakeAvailable(Catch2)
         list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-    else()
-        message(STATUS "Using system Catch2")
     endif()
-
     include(CTest)
     include(Catch)
 endif()
 
-# ------------------------------------------------------
-# Coverage settings
-# ------------------------------------------------------
-if(ENABLE_COVERAGE)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        message(STATUS "Enabling coverage reporting")
-        add_compile_options(--coverage -fprofile-arcs -ftest-coverage)
-        add_link_options(--coverage)
-    else()
-        message(WARNING "Coverage reporting only supported with GCC or Clang")
-    endif()
-endif()
-
-# ------------------------------------------------------
-# Coverage settings
-# ------------------------------------------------------
-if(ENABLE_COVERAGE)
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        message(STATUS "Enabling coverage reporting")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage -fprofile-arcs -ftest-coverage")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-    else()
-        message(WARNING "Coverage reporting only supported with GCC or Clang")
-    endif()
-endif()
-
-# ------------------------------------------------------
-# Core library
-# ------------------------------------------------------
+# ------------------ Core library ------------------
 add_library(nexus_core SHARED
         includes/Logger/Logger.hpp
         includes/Event/EventBus.hpp
@@ -139,52 +91,47 @@ add_library(nexus_core SHARED
         includes/Result/Result.hpp
         src/ipc/CommandServer.cpp
         includes/IPC/CommandServer.hpp
+        includes/mqtt/MQTTClient.hpp
+        src/mqtt/MQTTClient.cpp
+        includes/commands/Command.hpp
+        includes/commands/ListCommand.hpp
+        src/commands/ListCommands.cpp
+        includes/commands/CommandRegistry.hpp
+        src/commands/Command.cpp
+        includes/commands/HelpCommand.hpp
+        src/commands/HelpCommand.cpp
+        includes/commands/EnableModuleCommand.hpp
+        src/commands/EnableModuleCommand.cpp
 )
 
-# Include directories
 target_include_directories(nexus_core
         PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>  # ← WIJZIGING: voeg /includes toe
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>           # ← Behoud deze voor root files
         $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${croncpp_SOURCE_DIR}/include>
 )
 
-# Link libraries
 target_link_libraries(nexus_core
         PRIVATE
         spdlog::spdlog
         nlohmann_json::nlohmann_json
 )
 
-include_directories(includes)
-
-# Ensure PIC is enabled for nexus_core
 set_target_properties(nexus_core PROPERTIES
         POSITION_INDEPENDENT_CODE ON
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
-# Platform-specific settings
 if(WIN32)
-    # Windows export macros
     target_link_libraries(nexus_core PRIVATE ws2_32)
-
     target_compile_definitions(nexus_core
             PRIVATE NEXUS_CORE_EXPORTS
             INTERFACE NEXUS_CORE_IMPORTS
     )
-
-    # Set Windows-specific properties
-    set_target_properties(nexus_core PROPERTIES
-            WINDOWS_EXPORT_ALL_SYMBOLS ON
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
-            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
-            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>"
-    )
 endif()
 
-# ------------------------------------------------------
-# Module interface
-# ------------------------------------------------------
+# ------------------ Module interface ------------------
 add_library(nexus_module_interface INTERFACE)
 target_link_libraries(nexus_module_interface INTERFACE nexus_core)
 target_include_directories(nexus_module_interface
@@ -192,81 +139,23 @@ target_include_directories(nexus_module_interface
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 )
 
-# ------------------------------------------------------
-# Main executable
-# ------------------------------------------------------
+# ------------------ Main executable ------------------
 add_executable(NexusMainFrame main.cpp)
 target_link_libraries(NexusMainFrame PRIVATE nexus_core)
 
-# Copy DLL to executable directory
-add_custom_command(TARGET NexusMainFrame POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:nexus_core>
-        $<TARGET_FILE_DIR:NexusMainFrame>
-        COMMENT "Copying nexus_core DLL to executable directory"
+# ------------------ Export package ------------------
+install(TARGETS nexus_core nexus_module_interface
+        EXPORT NexusCoreTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
 )
 
-# ------------------------------------------------------
-# Tests
-# ------------------------------------------------------
-if(BUILD_TESTING)
-    add_executable(nexus_tests
-            tests/config/source/JsonConfigSourceTests.cpp
-    )
-
-    target_link_libraries(nexus_tests
-            PRIVATE
-            nexus_core
-            Catch2::Catch2WithMain
-    )
-
-    target_include_directories(nexus_tests
-            PRIVATE
-            ${CMAKE_CURRENT_SOURCE_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}/includes
-    )
-
-    # Platform-specific settings for tests
-    if(WIN32)
-        # Copy nexus_core DLL to test directory
-        add_custom_command(TARGET nexus_tests POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                $<TARGET_FILE:nexus_core>
-                $<TARGET_FILE_DIR:nexus_tests>
-                COMMENT "Copying nexus_core DLL to test directory"
-        )
-    endif()
-
-    # Set output directory for better organization
-    set_target_properties(nexus_tests PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
-    )
-
-    # Register tests with CTest
-    catch_discover_tests(nexus_tests
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
-    )
-
-    # Add custom target to run tests
-    add_custom_target(run_tests
-            COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure --verbose
-            DEPENDS nexus_tests
-            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-            COMMENT "Running all tests"
-    )
-endif()
-
-# ------------------------------------------------------
-# Export targets for external modules
-# ------------------------------------------------------
-export(
-        TARGETS
-        nexus_core
-        nexus_module_interface
+install(EXPORT NexusCoreTargets
+        FILE NexusCoreTargets.cmake
         NAMESPACE Nexus::
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/NexusCoreTargets.cmake"
+        DESTINATION lib/cmake/NexusCore
 )
 
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/NexusCoreConfig.cmake"
-        "include(\"\${CMAKE_CURRENT_LIST_DIR}/NexusCoreTargets.cmake\")"
-)
+install(DIRECTORY includes/ DESTINATION include)

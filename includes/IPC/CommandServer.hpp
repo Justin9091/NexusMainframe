@@ -36,7 +36,6 @@ public:
 
     void start();
     void stop();
-    void registerCommand(const std::string& cmd, CommandHandler handler);
     int getPort() const { return _port; }
 
 private:
@@ -51,7 +50,6 @@ private:
     std::atomic<bool> _running{false};
     std::thread _acceptThread;
 
-    std::map<std::string, CommandHandler> _handlers;
     std::mutex _handlersMutex;
     Logger _logger{"CommandServer"};
 };
