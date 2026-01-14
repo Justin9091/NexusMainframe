@@ -128,6 +128,7 @@ bool ModuleLoader::unloadModule(const std::string& moduleName) {
         modules_.end()
     );
 
+
     // Close handle
 #ifdef _WIN32
     FreeLibrary((HMODULE)it->second);
