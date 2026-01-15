@@ -5,9 +5,11 @@
 
 #include "commands/Command.hpp"
 #include "commands/CommandRegistry.hpp"
+#include "commands/DisableModuleCommand.hpp"
 #include "commands/EnableModuleCommand.hpp"
 #include "commands/HelpCommand.hpp"
 #include "commands/ListCommand.hpp"
+#include "manifest/Manifest.hpp"
 
 
 void NexusMainFrame::start() {
@@ -15,22 +17,27 @@ void NexusMainFrame::start() {
     _moduleLoader->loadModulesFromDirectory("./modules");
 
     for (auto &m: _moduleLoader->getLoadedModules()) {
-        m->initialize(_eventBus);
+        m->initialize(EventBus::getInstance());
     }
 
     CommandRegistry& registry = CommandRegistry::getInstance();
     registry.registerCommand("help", std::make_unique<HelpCommand>());
     registry.registerCommand("list", std::make_unique<ListCommand>(_moduleLoader.get()));
     registry.registerCommand("enable-module", std::make_unique<EnableModuleCommand>(_moduleLoader.get()));
+    registry.registerCommand("disable-module", std::make_unique<DisableModuleCommand>(_moduleLoader.get()));
 
-    _mqttClient = std::make_unique<MQTTClient>(_eventBus, "nexus-core", "192.168.2.161", 1883);
+    _mqttClient = std::make_unique<MQTTClient>(EventBus::getInstance(), "nexus-core", "192.168.2.161", 1883);
+
+    _manifest;
+    _manifest->load();
+    _manifest->listen();
 
     if (_mqttClient->connect()) {
         _mqttClient->subscribe("event");
     }
 
     // Add event listener voor MQTT temperature data
-    _eventBus.subscribe("mqtt:event", [this](const Event &event) {
+    EventBus::getInstance().subscribe("mqtt:event", [this](const Event &event) {
         std::any input = event.data;
         std::string name;
         std::string data;
@@ -52,14 +59,14 @@ void NexusMainFrame::start() {
         newEvent.name = name;
         newEvent.data = data;
 
-        _eventBus.publish(newEvent);
+        EventBus::getInstance().publish(newEvent);
     });
 
     _server.start();
 }
 
 void NexusMainFrame::stop() {
-    _eventBus.shutdown();
+    EventBus::getInstance().shutdown();
 
     if (_mqttClient) {
         _mqttClient->disconnect();
@@ -78,7 +85,7 @@ void NexusMainFrame::run() {
     while (_running.load()) {
         // if (!_mqttClient->isConnected()) _mqttClient->connect();
 
-        _eventBus.dispatchPending();
+        EventBus::getInstance().dispatchPending();
         _scheduler.tick();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
