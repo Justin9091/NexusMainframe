@@ -102,6 +102,10 @@ add_library(nexus_core SHARED
         src/commands/HelpCommand.cpp
         includes/commands/EnableModuleCommand.hpp
         src/commands/EnableModuleCommand.cpp
+        includes/commands/DisableModuleCommand.hpp
+        src/commands/DisableModuleCommand.cpp
+        includes/manifest/Manifest.hpp
+        src/manifest/Manifest.cpp
 )
 
 target_include_directories(nexus_core

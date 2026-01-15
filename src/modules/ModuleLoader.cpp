@@ -83,6 +83,7 @@ std::shared_ptr<IModule> ModuleLoader::loadModule(const std::string& libraryPath
     moduleHandles_[module->getName()] = handle;
 
     std::cout << "Loaded module: " << module->getName() << std::endl;
+    EventBus::getInstance().publish({"event:enable", module->getName()});
 
     return module;
 }
@@ -138,6 +139,7 @@ bool ModuleLoader::unloadModule(const std::string& moduleName) {
 
     moduleHandles_.erase(it);
 
+    EventBus::getInstance().publish({"event:disable", moduleName});
 
     return true;
 }
