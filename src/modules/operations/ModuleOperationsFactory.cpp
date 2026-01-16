@@ -4,7 +4,6 @@
 
 #include "Modules/operations/ModuleOperationsFactory.hpp"
 
-#include "modules/operations/WindowsModuleOperations.hpp"
 
 #ifdef _WIN32
     #include "Modules/operations/WindowsModuleOperations.hpp"

@@ -126,8 +126,8 @@ add_library(nexus_core SHARED
 
 target_include_directories(nexus_core
         PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>  # ← WIJZIGING: voeg /includes toe
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>           # ← Behoud deze voor root files
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${croncpp_SOURCE_DIR}/include>
 )
