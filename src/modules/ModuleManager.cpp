@@ -5,6 +5,7 @@
 #include "Modules/ModuleManager.hpp"
 
 #include <filesystem>
+#include <iostream>
 
 #include "Modules/operations/ModuleOperationsFactory.hpp"
 
@@ -43,12 +44,19 @@ const std::vector<LoadedModule>& ModuleManager::getModules() const {
     return loaded_;
 }
 
-void ModuleManager::load(const std::string &name) {
+bool ModuleManager::load(const std::string &name) {
     std::string prefix = "J:\\NexusMainFrame\\cmake-build-debug\\Modules";
-    std::string path = prefix + name;
+    std::string path = "J:\\NexusMainFrame\\cmake-build-debug\\Modules\\NexusAutomationModule.dll";
 
-    std::optional<LoadedModule> loaded = loader_.load(name);
-    if (!loaded.has_value()) return;
+    std::optional<LoadedModule> loaded = loader_.load(path);
+    if (!loaded.has_value()) {
+        std::cout << "Failed to load\n\r";
+        return false;
+    }
+
+    loaded.value().instance->initialize(EventBus::getInstance());
 
     loaded_.push_back(*loaded);
+
+    return true;
 }

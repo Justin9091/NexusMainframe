@@ -34,9 +34,9 @@ void NexusMainFrame::start() {
 
     _mqttClient = std::make_unique<MQTTClient>(EventBus::getInstance(), "nexus-core", "192.168.2.161", 1883);
 
-    if (_mqttClient->connect()) {
-        _mqttClient->subscribe("event");
-    }
+    // if (_mqttClient->connect()) {
+        // _mqttClient->subscribe("event");
+    // }
 
     // Add event listener voor MQTT temperature data
     EventBus::getInstance().subscribe("mqtt:event", [this](const Event &event) {

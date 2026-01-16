@@ -5,7 +5,6 @@
 #ifndef NEXUSCORE_MODULEMANAGER_HPP
 #define NEXUSCORE_MODULEMANAGER_HPP
 
-#include "IModule.hpp"
 #include "LoadedModule.hpp"
 #include "ModuleLoader.hpp"
 #include "ModuleUnloader.hpp"
@@ -19,7 +18,7 @@ public:
 
     const std::vector<LoadedModule>& getModules() const;
 
-    void load(const std::string & name);
+    bool load(const std::string &name);
 
 private:
     ModuleLoader loader_;
