@@ -7,17 +7,17 @@
 #include "Command.hpp"
 #include "Event/EventBus.hpp"
 #include "Modules/ModuleLoader.hpp"
+#include "Modules/ModuleManager.hpp"
 
 class DisableModuleCommand : public Command {
 private:
-    ModuleLoader* _moduleLoader;
-
+    ModuleManager& _moduleManager;
 public:
-    DisableModuleCommand(ModuleLoader* event);
+    DisableModuleCommand(ModuleManager &moduleManager);
+
     std::string getName() override;
     std::string getDescription() override;
     std::string execute(const std::vector<std::string> &args) override;
-
 };
 
 #endif //NEXUSCORE_DISABLEMODULECOMMAND_HPP

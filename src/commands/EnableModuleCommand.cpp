@@ -4,8 +4,7 @@
 
 #include "commands/EnableModuleCommand.hpp"
 
-EnableModuleCommand::EnableModuleCommand(ModuleLoader *moduleLoader) {
-    _moduleLoader = moduleLoader;
+EnableModuleCommand::EnableModuleCommand(ModuleManager& moduleManager): _moduleManager(moduleManager) {
 }
 
 std::string EnableModuleCommand::getName() {
@@ -17,5 +16,10 @@ std::string EnableModuleCommand::getDescription() {
 }
 
 std::string EnableModuleCommand::execute(const std::vector<std::string> &args) {
-    return "WIP";
+    std::string moduleName = args[0];
+    if (moduleName.length() <= 0) return "Usage: enable-module <module name>";
+
+    _moduleManager.load(moduleName);
+
+    return "Module enabled!";
 }

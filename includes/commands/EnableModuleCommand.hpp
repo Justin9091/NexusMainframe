@@ -6,13 +6,14 @@
 #define NEXUSCORE_ENABLEMODULECOMMAND_HPP
 #include "Command.hpp"
 #include "Modules/ModuleLoader.hpp"
+#include "Modules/ModuleManager.hpp"
 
 class EnableModuleCommand : public Command {
 private:
-    ModuleLoader* _moduleLoader;
+    ModuleManager& _moduleManager;
 
 public:
-    EnableModuleCommand(ModuleLoader* moduleLoader);
+    EnableModuleCommand(ModuleManager& moduleManager);
 
     std::string getName() override;
     std::string getDescription() override;
