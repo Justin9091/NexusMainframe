@@ -16,6 +16,8 @@ public:
     bool save();
     bool load();
     void listen();
+
+    const std::unordered_set<std::string>& getEnabled() {return _enabled;}
 };
 
 #endif //NEXUSCORE_MANIFFEST_HPP

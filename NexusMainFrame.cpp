@@ -9,28 +9,30 @@
 #include "commands/EnableModuleCommand.hpp"
 #include "commands/HelpCommand.hpp"
 #include "commands/ListCommand.hpp"
+#include "commands/ScanCommand.hpp"
 #include "manifest/Manifest.hpp"
 
 
 void NexusMainFrame::start() {
-    _moduleLoader = std::make_unique<ModuleLoader>();
-    _moduleLoader->loadModulesFromDirectory("./modules");
+    _manifest = std::make_unique<Manifest>();
+    _manifest->load();
+    _manifest->listen();
 
-    for (auto &m: _moduleLoader->getLoadedModules()) {
-        m->initialize(EventBus::getInstance());
+    _moduleManager = std::make_unique<ModuleManager>();
+
+
+    for (std::string enabled : _manifest->getEnabled()) {
+        _moduleManager->load(enabled);
     }
 
     CommandRegistry& registry = CommandRegistry::getInstance();
     registry.registerCommand("help", std::make_unique<HelpCommand>());
-    registry.registerCommand("list", std::make_unique<ListCommand>(_moduleLoader.get()));
-    registry.registerCommand("enable-module", std::make_unique<EnableModuleCommand>(_moduleLoader.get()));
-    registry.registerCommand("disable-module", std::make_unique<DisableModuleCommand>(_moduleLoader.get()));
+    registry.registerCommand("list", std::make_unique<ListCommand>(*_moduleManager));
+    registry.registerCommand("enable-module", std::make_unique<EnableModuleCommand>(*_moduleManager));
+    registry.registerCommand("disable-module", std::make_unique<DisableModuleCommand>(*_moduleManager));
+    registry.registerCommand("scan", std::make_unique<ScanCommand>());
 
     _mqttClient = std::make_unique<MQTTClient>(EventBus::getInstance(), "nexus-core", "192.168.2.161", 1883);
-
-    _manifest;
-    _manifest->load();
-    _manifest->listen();
 
     if (_mqttClient->connect()) {
         _mqttClient->subscribe("event");
@@ -73,8 +75,9 @@ void NexusMainFrame::stop() {
         _mqttClient.reset();
     }
 
-    for (auto &m: _moduleLoader->getLoadedModules())
-        m->shutdown();
+    for (auto &m: _moduleManager->getModules()) {
+        m.instance->shutdown();
+    }
 
     _server.stop();
 }

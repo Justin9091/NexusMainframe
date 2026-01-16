@@ -8,6 +8,7 @@
 #include "Provider/ConfigProvider.hpp"
 
 class ConfigProviderFactory {
+public:
     static ConfigProvider create(const std::string& filepath);
 };
 

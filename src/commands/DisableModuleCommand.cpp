@@ -4,8 +4,9 @@
 
 #include "commands/DisableModuleCommand.hpp"
 
-DisableModuleCommand::DisableModuleCommand(ModuleLoader *event) {
-    _moduleLoader = event;
+#include "Modules/ModuleManager.hpp"
+
+DisableModuleCommand::DisableModuleCommand(ModuleManager& moduleManager): _moduleManager(moduleManager) {
 }
 
 std::string DisableModuleCommand::getName() {
@@ -18,7 +19,12 @@ std::string DisableModuleCommand::getDescription() {
 
 std::string DisableModuleCommand::execute(const std::vector<std::string> &args) {
     std::string moduleName = args[0];
-    _moduleLoader->unloadModule(moduleName);
+    for (const LoadedModule & module : _moduleManager.getModules()) {
+        if (module.name == moduleName) {
+            _moduleManager.unload(moduleName);
+            break;
+        }
+    }
 
     return "Disabled " + moduleName;
 }

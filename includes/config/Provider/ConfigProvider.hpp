@@ -20,6 +20,7 @@ public:
     explicit ConfigProvider(std::unique_ptr<IConfigSource> source);
 
     void load(const std::string &filepath);
+    void save(const std::string &filepath);
 
     bool has(const std::string &key) const;
 
@@ -41,6 +42,14 @@ public:
     T getOrDefault(const std::string &key, T defaultValue) const {
         return get<T>(key).value_or(defaultValue);
     }
+
+    template<typename T>
+    void set(const std::string &key, const T &value) {
+        config_[key] = value;
+    }
+
+    void remove(const std::string &key);
+    void clear();
 };
 
 #endif //NEXUSCORE_CONFIGPROVIDER_HPP

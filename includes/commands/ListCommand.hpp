@@ -5,17 +5,16 @@
 #ifndef NEXUSCORE_LISTCOMMAND_HPP
 #define NEXUSCORE_LISTCOMMAND_HPP
 #include "Command.hpp"
-#include "Modules/ModuleLoader.hpp"
+#include "Modules/ModuleManager.hpp"
 
 class ListCommand : public Command {
 private:
-    ModuleLoader* _moduleLoader;
+    const ModuleManager& _moduleManager;
 
 public:
-    ListCommand(ModuleLoader* moduleLoader);
+    ListCommand(const ModuleManager& moduleManager);
     std::string getName() override;
     std::string getDescription() override;
-
     std::string execute(const std::vector<std::string> &args) override;
 };
 

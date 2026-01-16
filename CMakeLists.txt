@@ -106,6 +106,22 @@ add_library(nexus_core SHARED
         src/commands/DisableModuleCommand.cpp
         includes/manifest/Manifest.hpp
         src/manifest/Manifest.cpp
+        includes/Modules/operations/IModuleOperations.hpp
+        includes/Modules/operations/WindowsModuleOperations.hpp
+        includes/Modules/operations/ModuleOperationsFactory.hpp
+        src/modules/operations/ModuleOperationsFactory.cpp
+        includes/Modules/operations/LinuxModuleOperations.hpp
+        includes/Modules/ModuleManager.hpp
+        includes/Modules/ModuleUnloader.hpp
+        includes/Modules/LoadedModule.hpp
+        src/modules/ModuleUnloader.cpp
+        src/modules/ModuleManager.cpp
+        includes/commands/ScanCommand.hpp
+        includes/Modules/scanner/IModuleScanner.hpp
+        includes/Modules/scanner/WindowsModuleScanner.hpp
+        includes/Modules/scanner/LinuxModuleScanner.hpp
+        includes/Modules/scanner/ModuleScannerFactory.hpp
+        src/commands/ScanCommand.cpp
 )
 
 target_include_directories(nexus_core
