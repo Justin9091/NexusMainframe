@@ -10,6 +10,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if(MINGW)
+    # Statisch linken van alle runtime libraries inclusief threads
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++ -static")
+endif()
+
 # ------------------ CLI executable ------------------
 add_executable(nexus
         ../../includes/cli/NexusCLI.h

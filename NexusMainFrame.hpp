@@ -4,17 +4,13 @@
 #include <memory>
 #include <atomic>
 
-#include "Event/EventBus.hpp"
 #include "IPC/CommandServer.hpp"
-#include "manifest/Manifest.hpp"
-#include "Modules/ModuleLoader.hpp"
 #include "Modules/ModuleManager.hpp"
 #include "mqtt/MQTTClient.hpp"
 #include "Scheduler/Scheduler.hpp"
 
 class NexusMainFrame {
 private:
-    std::unique_ptr<Manifest> _manifest;
     std::unique_ptr<ModuleManager> _moduleManager;
     std::atomic<bool> _running{true};
     Scheduler _scheduler;

@@ -15,6 +15,7 @@ public:
 
     void loadFromDirectory(const std::string& path);
     bool unload(const std::string& name);
+    bool isLoaded(const std::string& name) const;
 
     const std::vector<LoadedModule>& getModules() const;
 

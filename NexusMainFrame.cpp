@@ -1,29 +1,36 @@
 #include "NexusMainFrame.hpp"
+
 #include <iostream>
 #include <thread>
-#include <sstream>
 
 #include "commands/Command.hpp"
 #include "commands/CommandRegistry.hpp"
 #include "commands/DisableModuleCommand.hpp"
+#include "commands/DownloadCommand.hpp"
 #include "commands/EnableModuleCommand.hpp"
 #include "commands/HelpCommand.hpp"
 #include "commands/ListCommand.hpp"
+#include "commands/MonitorCommand.hpp"
 #include "commands/ScanCommand.hpp"
-#include "manifest/Manifest.hpp"
+#include "pathing/PathManager.hpp"
 
 
 void NexusMainFrame::start() {
-    _manifest = std::make_unique<Manifest>();
-    _manifest->load();
-    _manifest->listen();
+    auto& paths = PathManager::getInstance();
+    paths.ensureExists("modules.builtin");
+    paths.ensureExists("modules.downloaded");
+    paths.ensureExists("config");
+    paths.ensureExists("cache.downloads");
+    paths.ensureExists("logs");
+    paths.ensureExists("data.scans");
+
+    paths.registerPath("modules.registry", "modules/available-modules.json");
 
     _moduleManager = std::make_unique<ModuleManager>();
 
-
-    for (std::string enabled : _manifest->getEnabled()) {
-        _moduleManager->load(enabled);
-    }
+    // for (std::string enabled : _manifest->getEnabled()) {
+        // _moduleManager->load(enabled);
+    // }
 
     CommandRegistry& registry = CommandRegistry::getInstance();
     registry.registerCommand("help", std::make_unique<HelpCommand>());
@@ -31,6 +38,8 @@ void NexusMainFrame::start() {
     registry.registerCommand("enable-module", std::make_unique<EnableModuleCommand>(*_moduleManager));
     registry.registerCommand("disable-module", std::make_unique<DisableModuleCommand>(*_moduleManager));
     registry.registerCommand("scan", std::make_unique<ScanCommand>());
+    registry.registerCommand("monitor", std::make_unique<MonitorCommand>());
+    registry.registerCommand("download", std::make_unique<DownloadCommand>());
 
     _mqttClient = std::make_unique<MQTTClient>(EventBus::getInstance(), "nexus-core", "192.168.2.161", 1883);
 
