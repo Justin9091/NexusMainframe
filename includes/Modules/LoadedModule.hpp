@@ -11,6 +11,7 @@
 
 struct LoadedModule {
     std::string name;
+    std::string path;
     std::shared_ptr<IModule> instance;
     void* handle;
 };

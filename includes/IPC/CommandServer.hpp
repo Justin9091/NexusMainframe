@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <errno.h>
 typedef int SocketType;
 #define INVALID_SOCKET_VALUE -1
 #define CLOSE_SOCKET close
@@ -43,7 +44,8 @@ private:
     void cleanupSockets();
     void acceptLoop();
     void handleClient(SocketType clientSocket);
-    std::string processCommand(const std::string& input);
+    std::string processCommand(const std::string& input, SocketType clientSocket);
+    void handleContinuousMonitor(SocketType clientSocket, const std::string& commandName, int interval);
 
     int _port;
     SocketType _serverSocket = INVALID_SOCKET_VALUE;

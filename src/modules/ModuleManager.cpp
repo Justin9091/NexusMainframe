@@ -33,20 +33,36 @@ bool ModuleManager::unload(const std::string& name) {
 
     if (it == loaded_.end()) return false;
 
-    EventBus::getInstance().publish({"event:disable", it->name});
-    unloader_.unload(*it);
+    LoadedModule modCopy = *it;
+
+    EventBus::getInstance().publish({"event:disable", modCopy.name});
+    // if (modCopy.handle) {
+    //     unloader_.unload(modCopy);
+    //     modCopy.handle = nullptr;
+    // }
+
     loaded_.erase(it);
 
     return true;
+}
+
+
+bool ModuleManager::isLoaded(const std::string &name) const {
+    for (const LoadedModule & loaded : loaded_) {
+        if (loaded.name == name) return true;
+    }
+
+    return false;
 }
 
 const std::vector<LoadedModule>& ModuleManager::getModules() const {
     return loaded_;
 }
 
-bool ModuleManager::load(const std::string &name) {
-    std::string prefix = "J:\\NexusMainFrame\\cmake-build-debug\\Modules";
-    std::string path = "J:\\NexusMainFrame\\cmake-build-debug\\Modules\\NexusAutomationModule.dll";
+bool ModuleManager::load(const std::string &path) {
+    if (isLoaded(path)) {
+        return false;
+    }
 
     std::optional<LoadedModule> loaded = loader_.load(path);
     if (!loaded.has_value()) {

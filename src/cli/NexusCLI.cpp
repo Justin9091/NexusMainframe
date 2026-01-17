@@ -6,9 +6,16 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include <thread>
+#include <chrono>
 
 #ifdef _WIN32
+#include <conio.h>
+#include <windows.h>
 static bool wsaInitialized = false;
+#else
+#include <termios.h>
+#include <fcntl.h>
 #endif
 
 NexusCLI::NexusCLI(const std::string& host, int port)
@@ -141,11 +148,108 @@ void NexusCLI::printUsage(const std::string& programName) {
     std::cout << "  list                    - List all modules\n";
     std::cout << "  enable <module>         - Enable a module\n";
     std::cout << "  disable <module>        - Disable a module\n";
-    std::cout << "  scan                    - Scan for new modules\n\n";
+    std::cout << "  scan                    - Scan for new modules\n";
+    std::cout << "  monitor [-c] [-i N]     - System monitoring\n";
+    std::cout << "                            -c, --continuous  Continuous mode\n";
+    std::cout << "                            -i, --interval N  Refresh interval (seconds)\n\n";
     std::cout << "Examples:\n";
     std::cout << "  " << programName << " help\n";
     std::cout << "  " << programName << " list\n";
     std::cout << "  " << programName << " enable mymodule\n";
+    std::cout << "  " << programName << " monitor\n";
+    std::cout << "  " << programName << " monitor -c\n";
+    std::cout << "  " << programName << " monitor -c -i 5\n";
+}
+
+#ifdef _WIN32
+bool kbhit() {
+    return _kbhit() != 0;
+}
+#else
+bool kbhit() {
+    struct termios oldt, newt;
+    int ch;
+    int oldf;
+
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    ch = getchar();
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+    if(ch != EOF) {
+        ungetc(ch, stdin);
+        return true;
+    }
+
+    return false;
+}
+#endif
+
+void NexusCLI::runContinuousMonitor(int refreshInterval) {
+#ifdef _WIN32
+    // Enable ANSI escape sequences
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+#endif
+
+    std::cout << "\033[?25l"; // Hide cursor
+    std::cout << "\033[1;33mReal-time monitoring started. Press 'q' to quit...\033[0m\n\n";
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    bool running = true;
+    while (running) {
+        // Clear screen and move to top
+        std::cout << "\033[2J\033[H";
+
+        // Reconnect for each request to avoid timeout
+        if (!_connected) {
+            if (!connect()) {
+                std::cerr << "Lost connection to server" << std::endl;
+                break;
+            }
+        }
+
+        // Send monitor command (without -c flag to get single snapshot)
+        std::string response = sendCommand("monitor");
+
+        // Close connection after each request
+        disconnect();
+
+        std::cout << response << std::endl;
+        std::cout << "\n\033[1;33m[Refresh: " << refreshInterval << "s | Press 'q' to quit]\033[0m" << std::endl;
+
+        // Sleep and check for 'q' keypress
+        auto start = std::chrono::steady_clock::now();
+        while (std::chrono::duration_cast<std::chrono::seconds>(
+                   std::chrono::steady_clock::now() - start).count() < refreshInterval) {
+
+            if (kbhit()) {
+#ifdef _WIN32
+                char ch = _getch();
+#else
+                char ch = getchar();
+#endif
+                if (ch == 'q' || ch == 'Q') {
+                    running = false;
+                    break;
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
+    std::cout << "\033[?25h"; // Show cursor
+    std::cout << "\n\033[1;32mMonitoring stopped.\033[0m\n";
 }
 
 int NexusCLI::run(int argc, char* argv[]) {
@@ -160,19 +264,43 @@ int NexusCLI::run(int argc, char* argv[]) {
         args.push_back(argv[i]);
     }
 
-    std::string command = buildCommand(args);
+    // Check for continuous monitor mode
+    if (args[0] == "monitor") {
+        bool continuous = false;
+        int refreshInterval = 2;
 
-    // Connect to server
+        for (size_t i = 1; i < args.size(); ++i) {
+            if (args[i] == "--continuous" || args[i] == "-c") {
+                continuous = true;
+            } else if (args[i] == "--interval" || args[i] == "-i") {
+                if (i + 1 < args.size()) {
+                    try {
+                        refreshInterval = std::stoi(args[i + 1]);
+                        if (refreshInterval < 1) refreshInterval = 1;
+                        ++i;
+                    } catch (...) {
+                        std::cerr << "Invalid interval value" << std::endl;
+                        return 1;
+                    }
+                }
+            }
+        }
+
+        if (continuous) {
+            runContinuousMonitor(refreshInterval);
+            return 0;
+        }
+    }
+
+    // Regular command execution
     if (!connect()) {
         return 1;
     }
 
-    // Send command and get response
+    std::string command = buildCommand(args);
     std::string response = sendCommand(command);
     std::cout << response << std::endl;
 
-    // Disconnect
     disconnect();
-
     return 0;
 }

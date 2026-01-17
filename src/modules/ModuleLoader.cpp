@@ -35,6 +35,7 @@ std::optional<LoadedModule> ModuleLoader::load(const std::string& libraryPath) {
 
     return LoadedModule{
         instance->getName(),
+        libraryPath,
         instance,
         handle
     };

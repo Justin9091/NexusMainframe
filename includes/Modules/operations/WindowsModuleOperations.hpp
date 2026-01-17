@@ -1,11 +1,8 @@
-//
-// Created by jusra on 15-1-2026.
-//
-
 #ifndef NEXUSCORE_WINDOWSMODULEOPERATIONS_HPP
 #define NEXUSCORE_WINDOWSMODULEOPERATIONS_HPP
 #include "IModuleOperations.hpp"
 #include <windows.h>
+#include <string>
 
 class WindowsModuleOperations : public IModuleOperations {
 public:
@@ -25,6 +22,7 @@ public:
             lastError_ = "Failed to unload library";
             return false;
         }
+
         return true;
     }
 
@@ -50,4 +48,4 @@ private:
     std::string lastError_;
 };
 
-#endif //NEXUSCORE_WINDOWSMODULEOPERATIONS_HPP
+#endif // NEXUSCORE_WINDOWSMODULEOPERATIONS_HPP

@@ -1,4 +1,9 @@
-#pragma once
+//
+// Created by kikker234 on 16-01-2026.
+//
+
+#ifndef NEXUSCLI_H
+#define NEXUSCLI_H
 
 #include <string>
 #include <vector>
@@ -12,6 +17,7 @@
 #define CLOSE_SOCKET closesocket
 #else
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 typedef int SocketType;
@@ -21,22 +27,25 @@ typedef int SocketType;
 
 class NexusCLI {
 public:
-    NexusCLI(const std::string& host = "127.0.0.1", int port = 9090);
+    NexusCLI(const std::string& host, int port);
     ~NexusCLI();
 
-    bool connect();
-    void disconnect();
-    std::string sendCommand(const std::string& command);
     int run(int argc, char* argv[]);
 
 private:
+    void initializeSockets();
+    void cleanupSockets();
+    bool connect();
+    void disconnect();
+    std::string sendCommand(const std::string& command);
+    std::string buildCommand(const std::vector<std::string>& args);
+    void printUsage(const std::string& programName);
+    void runContinuousMonitor(int refreshInterval);
+
     std::string _host;
     int _port;
     SocketType _socket;
     bool _connected;
-
-    void initializeSockets();
-    void cleanupSockets();
-    std::string buildCommand(const std::vector<std::string>& args);
-    void printUsage(const std::string& programName);
 };
+
+#endif // NEXUSCLI_H

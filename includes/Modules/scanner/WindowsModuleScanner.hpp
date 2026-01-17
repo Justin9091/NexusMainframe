@@ -71,10 +71,6 @@ private:
         return skip.contains(name);
     }
 
-    // =========================
-    // 🔥 VEILIGE ITERATIEVE SCAN
-    // =========================
-
     void scanIterative(const std::wstring& root, std::vector<ModuleInfo>& out) {
         std::vector<std::wstring> stack;
         stack.reserve(1024);

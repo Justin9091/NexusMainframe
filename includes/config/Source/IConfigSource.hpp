@@ -9,7 +9,16 @@
 #include <unordered_map>
 #include <variant>
 
-using ConfigValue = std::variant<std::string, int, double, bool>;
+#include "nlohmann/json_fwd.hpp"
+
+using ConfigValue = std::variant<
+    std::string,
+    int,
+    double,
+    bool,
+    nlohmann::json
+>;
+
 using ConfigMap = std::unordered_map<std::string, ConfigValue>;
 
 class IConfigSource {
