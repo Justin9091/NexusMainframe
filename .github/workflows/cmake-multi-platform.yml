@@ -1,4 +1,4 @@
-name: CMake on multiple platforms
+name: CI/CD
 
 on:
   push:
@@ -6,103 +6,162 @@ on:
   pull_request:
     branches: [ "main" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
+    name: Code Quality
     runs-on: ubuntu-latest
-
+    
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Install clang-tidy and clang-format
+      
+      - name: Install tools
         run: |
           sudo apt-get update
           sudo apt-get install -y clang-tidy clang-format
-
-      - name: Run clang-format check
-        continue-on-error: true
+      
+      - name: Check formatting
         run: |
-          find src includes -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) 2>/dev/null | xargs clang-format --dry-run --Werror || true
-
-      - name: Configure CMake for clang-tidy
-        run: |
-          cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
+          find src includes -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) \
+            -exec clang-format --dry-run --Werror {} +
+      
+      - name: Configure CMake
+        run: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+      
       - name: Run clang-tidy
-        continue-on-error: true
         run: |
-          find src -name '*.cpp' 2>/dev/null | xargs clang-tidy -p build --checks='-*,bugprone-*,clang-analyzer-*' || true
+          find src -name '*.cpp' -exec clang-tidy -p build \
+            --checks='-*,bugprone-*,clang-analyzer-*,modernize-*,performance-*' \
+            --warnings-as-errors='*' {} +
 
   build:
+    name: ${{ matrix.os }} - ${{ matrix.compiler }}
     needs: lint
     runs-on: ${{ matrix.os }}
-
+    
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        build_type: [Release]
-        c_compiler: [gcc, clang, cl]
         include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
+          # Linux builds
           - os: ubuntu-latest
+            compiler: gcc
             c_compiler: gcc
             cpp_compiler: g++
+            coverage: true
+          
           - os: ubuntu-latest
+            compiler: clang
             c_compiler: clang
             cpp_compiler: clang++
-        exclude:
+            coverage: false
+          
+          # Windows builds
           - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
+            compiler: msvc
             c_compiler: cl
-
+            cpp_compiler: cl
+            coverage: false
+          
+          # macOS builds
+          - os: macos-latest
+            compiler: clang
+            c_compiler: clang
+            cpp_compiler: clang++
+            coverage: false
+    
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: Set reusable strings
-        id: strings
-        shell: bash
-        run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
+      
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake lcov
-
+          sudo apt-get install -y build-essential cmake lcov ninja-build
+      
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install ninja
+      
+      - name: Setup MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+      
+      - name: Cache CMake build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build
+            ~/.cache/ccache
+          key: ${{ matrix.os }}-${{ matrix.compiler }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ matrix.os }}-${{ matrix.compiler }}-
+      
       - name: Configure CMake
-        run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -DBUILD_TESTING=ON
-          -DENABLE_COVERAGE=${{ matrix.c_compiler == 'gcc' && 'ON' || 'OFF' }}
-          -S ${{ github.workspace }}
-
-      - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
-
-      - name: Run tests
-        working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ctest --output-on-failure -C ${{ matrix.build_type }}
-
-      - name: Verify build artifacts
-        shell: bash
-        working-directory: ${{ steps.strings.outputs.build-output-dir }}
         run: |
-          echo "Build completed successfully"
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            ls -la ${{ matrix.build_type }}/ || ls -la .
-          else
-            ls -la
+          cmake -B build -G Ninja \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=ON \
+            -DENABLE_COVERAGE=${{ matrix.coverage && 'ON' || 'OFF' }}
+      
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      
+      - name: Run tests
+        working-directory: build
+        run: ctest --output-on-failure --verbose -C Release
+      
+      - name: Generate coverage
+        if: matrix.coverage
+        working-directory: build
+        run: |
+          lcov --capture --directory . --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/test/*' --output-file coverage.info
+          lcov --list coverage.info
+      
+      - name: Upload coverage to Codecov
+        if: matrix.coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: build/coverage.info
+          fail_ci_if_error: false
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.compiler }}
+          path: build/Testing/
+          retention-days: 7
+      
+      - name: Upload build artifacts
+        if: matrix.os == 'ubuntu-latest' && matrix.compiler == 'gcc'
+        uses: actions/upload-artifact@v4
+        with:
+          name: binaries-linux
+          path: build/bin/
+          retention-days: 30
+
+  build-summary:
+    name: Build Summary
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Check build status
+        run: |
+          if [ "${{ needs.build.result }}" != "success" ]; then
+            echo "::error::One or more builds failed"
+            exit 1
           fi
+          echo "✅ All builds passed successfully"
