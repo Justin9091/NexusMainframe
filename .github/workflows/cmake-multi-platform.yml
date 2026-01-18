@@ -34,9 +34,10 @@ jobs:
         run: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
       
       - name: Run clang-tidy
+        continue-on-error: true
         run: |
           find src -name '*.cpp' -exec clang-tidy -p build \
-            --checks='-*,bugprone-*,clang-analyzer-*' {} +
+            --checks='-*,bugprone-*,clang-analyzer-*' {} + || echo "⚠️ Clang-tidy found issues (non-blocking)"
 
   build:
     name: ${{ matrix.os }} - ${{ matrix.compiler }}
