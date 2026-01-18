@@ -3,20 +3,18 @@
 //
 
 #include "mainframe/service/ServiceHostFactory.hpp"
+#include "mainframe/service/ForegroundServiceHost.hpp"  // ← Verplaats BUITEN #ifdef
 
 #ifdef _WIN32
 #include "mainframe/service/WindowsServiceHost.hpp"
-#include "mainframe/service/ForegroundServiceHost.hpp"
 #include <windows.h>
-#endif
 
-#ifdef _WIN32
-    static bool IsRunningAsService() {
-        DWORD processId = GetCurrentProcessId();
-        DWORD sessionId;
-        ProcessIdToSessionId(processId, &sessionId);
-        return sessionId == 0; // Session 0 = service
-    }
+static bool IsRunningAsService() {
+    DWORD processId = GetCurrentProcessId();
+    DWORD sessionId;
+    ProcessIdToSessionId(processId, &sessionId);
+    return sessionId == 0; // Session 0 = service
+}
 #endif
 
 std::unique_ptr<IServiceHost> ServiceHostFactory::create() {
