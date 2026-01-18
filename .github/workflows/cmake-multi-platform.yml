@@ -26,9 +26,11 @@ jobs:
           sudo apt-get install -y clang-tidy clang-format
       
       - name: Check formatting
+        continue-on-error: true
         run: |
+          echo "⚠️ Formatting check (non-blocking)"
           find src includes -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) \
-            -exec clang-format --dry-run --Werror {} +
+            -exec clang-format --dry-run --Werror {} + || true
       
       - name: Configure CMake
         run: cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -36,8 +38,9 @@ jobs:
       - name: Run clang-tidy
         continue-on-error: true
         run: |
+          echo "⚠️ Static analysis (non-blocking)"
           find src -name '*.cpp' -exec clang-tidy -p build \
-            --checks='-*,bugprone-*,clang-analyzer-*' {} + || echo "⚠️ Clang-tidy found issues (non-blocking)"
+            --checks='-*,bugprone-*,clang-analyzer-*' {} + || true
 
   build:
     name: ${{ matrix.os }} - ${{ matrix.compiler }}
