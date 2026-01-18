@@ -12,7 +12,7 @@
 #include "commands/ListCommand.hpp"
 #include "commands/MonitorCommand.hpp"
 #include "commands/ScanCommand.hpp"
-#include "modules/ModuleManager.hpp"
+#include "Modules/ModuleManager.hpp"
 #include "mqtt/MQTTClient.hpp"
 #include "event/EventBus.hpp"
 
