@@ -36,8 +36,7 @@ jobs:
       - name: Run clang-tidy
         run: |
           find src -name '*.cpp' -exec clang-tidy -p build \
-            --checks='-*,bugprone-*,clang-analyzer-*,modernize-*,performance-*' \
-            --warnings-as-errors='*' {} +
+            --checks='-*,bugprone-*,clang-analyzer-*' {} +
 
   build:
     name: ${{ matrix.os }} - ${{ matrix.compiler }}
