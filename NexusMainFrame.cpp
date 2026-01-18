@@ -14,7 +14,7 @@
 #include "commands/ScanCommand.hpp"
 #include "Modules/ModuleManager.hpp"
 #include "mqtt/MQTTClient.hpp"
-#include "event/EventBus.hpp"
+#include "Event/EventBus.hpp"
 
 void NexusMainFrame::start() {
     try {
