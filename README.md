@@ -6,6 +6,7 @@
 [![License](https://img.shields.io/github/license/Justin9091/NexusMainframe?style=for-the-badge)](LICENSE)
 [![C++](https://img.shields.io/badge/C++-20-blue?style=for-the-badge&logo=cplusplus)](https://isocpp.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.20+-064F8C?style=for-the-badge&logo=cmake)](https://cmake.org/)
+[![Coverage](https://coveralls.io/repos/github/USERNAME/REPO/badge.svg?branch=main)](https://coveralls.io/github/USERNAME/REPO?branch=main)
 </div>
 
 # 🚀 Nexus Mainframe
