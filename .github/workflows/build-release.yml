@@ -1,0 +1,93 @@
+name: Build Release Packages
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: NexusMainFrame-Linux
+            package_pattern: "*.deb;*.rpm;*.tar.gz"
+          - os: windows-latest
+            artifact_name: NexusMainFrame-Windows
+            package_pattern: "*.exe;*.zip"
+          - os: macos-latest
+            artifact_name: NexusMainFrame-macOS
+            package_pattern: "*.dmg;*.tar.gz"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            ninja-build \
+            rpm \
+            libssl-dev
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install ninja
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install nsis -y
+
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -G Ninja
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Create Package
+        run: |
+          cd build
+          cpack -C Release
+
+      - name: List generated files
+        shell: bash
+        run: |
+          echo "Generated packages:"
+          ls -lh build/*.{exe,dmg,deb,rpm,zip,tar.gz} 2>/dev/null || echo "Some package types not found (expected)"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            build/*.exe
+            build/*.dmg
+            build/*.deb
+            build/*.rpm
+            build/*.zip
+            build/*.tar.gz
+          if-no-files-found: warn
+
+      - name: Create Release
+        if: star

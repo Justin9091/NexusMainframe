@@ -5,6 +5,7 @@
 #ifndef NEXUSCORE_COMMANDREGISTRY_HPP
 #define NEXUSCORE_COMMANDREGISTRY_HPP
 #include <unordered_map>
+#include "commands/Command.hpp"
 
 class CommandRegistry {
 public:

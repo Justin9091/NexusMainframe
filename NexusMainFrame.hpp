@@ -12,12 +12,14 @@
 class NexusMainFrame {
 private:
     std::unique_ptr<ModuleManager> _moduleManager;
-    std::atomic<bool> _running{true};
     Scheduler _scheduler;
     CommandServer _server;
     std::unique_ptr<MQTTClient> _mqttClient;
 
 public:
+    std::thread _mainThread;
+    std::atomic<bool> _running{true};
+
     void run();
     void start();
     void stop();
