@@ -108,13 +108,13 @@ jobs:
             ${{ matrix.os }}-${{ matrix.compiler }}-
       
       - name: Configure CMake
-        run: |
-          cmake -B build -G Ninja \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
-            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_TESTING=ON \
-            -DENABLE_COVERAGE=${{ matrix.coverage && 'ON' || 'OFF' }}
+        run: >
+          cmake -B build -G Ninja
+          -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+          -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+          -DENABLE_COVERAGE=${{ matrix.coverage && 'ON' || 'OFF' }}
       
       - name: Build
         run: cmake --build build --config Release --parallel
