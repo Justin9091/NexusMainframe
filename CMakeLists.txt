@@ -51,21 +51,27 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
-# CURL
-# ------------------ CURL (STATIC, HTTPS, SCHANNEL) ------------------
-
+# ------------------ CURL (STATIC, HTTPS) ------------------
 set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 set(CURL_STATICLIB ON CACHE BOOL "" FORCE)
 
-# SSL via Windows Schannel
-set(CMAKE_USE_SCHANNEL ON CACHE BOOL "" FORCE)
-set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
-set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
-
 # Enable HTTPS
 set(CURL_DISABLE_HTTP OFF CACHE BOOL "" FORCE)
 set(CURL_DISABLE_HTTPS OFF CACHE BOOL "" FORCE)
+
+# SSL configuration per platform
+if(WIN32)
+    # SSL via Windows Schannel
+    set(CMAKE_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+    set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+    set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+else()
+    # SSL via OpenSSL on Unix/Linux
+    set(CMAKE_USE_SCHANNEL OFF CACHE BOOL "" FORCE)
+    set(CURL_USE_SCHANNEL OFF CACHE BOOL "" FORCE)
+    set(CURL_USE_OPENSSL ON CACHE BOOL "" FORCE)
+endif()
 
 # Disable unused protocols
 set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
