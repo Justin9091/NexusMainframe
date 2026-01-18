@@ -211,7 +211,7 @@ if(WIN32)
     set(CMAKE_USE_SCHANNEL ON CACHE INTERNAL "")
 else ()
     find_package(OpenSSL REQUIRED)
-    target_link_libraries(nexus-core PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    target_link_libraries(nexus_core PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 # ------------------ Module interface ------------------
