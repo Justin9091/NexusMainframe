@@ -124,7 +124,7 @@ jobs:
         run: ctest --output-on-failure --verbose -C Release
       
       - name: Generate coverage
-        if: matrix.coverage
+        if: matrix.coverage && hashFiles('test/**') != ''
         working-directory: build
         run: |
           lcov --capture --directory . --output-file coverage.info
@@ -132,7 +132,7 @@ jobs:
           lcov --list coverage.info
       
       - name: Upload coverage to Codecov
-        if: matrix.coverage
+        if: matrix.coverage && hashFiles('test/**') != ''
         uses: codecov/codecov-action@v4
         with:
           files: build/coverage.info
