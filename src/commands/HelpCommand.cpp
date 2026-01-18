@@ -19,11 +19,14 @@ std::string HelpCommand::getDescription() {
 }
 
 std::string HelpCommand::execute(const std::vector<std::string> &args) {
-    std::string result = "       __\n"
-                         "    /\\ \\ \\_____  ___   _\n"
-                         "   /  \\/ / _ \\ \\/ / | | / __|\n"
-                         "  / /\\  /  __/>  <| |_| \\__ \\\n"
-                         "  \\_\\ \\/ \\___/_/\\_\\\\__,_|___/\n\r\n\r\n";
+    std::string result =
+        "\033[38;2;180;0;255m       __\n"
+        "\033[38;2;150;0;255m    /\\ \\ \\_____  ___   _\n"
+        "\033[38;2;120;0;255m   /  \\/ / _ \\ \\/ / | | / __|\n"
+        "\033[38;2;90;0;255m  / /\\  /  __/>  <| |_| \\__ \\\n"
+        "\033[38;2;60;0;255m  \\_\\ \\/ \\___/_/\\_\\\\__,_|___/\n"
+        "\033[0m\r\n\r\n";
+
 
 #ifdef _WIN32
     // Enable ANSI colors op Windows 10+
