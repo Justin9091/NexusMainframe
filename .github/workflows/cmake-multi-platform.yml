@@ -129,14 +129,16 @@ jobs:
         run: |
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' '*/test/*' --output-file coverage.info
-          lcov --list coverage.info
+          echo "=== Coverage Summary ==="
+          lcov --summary coverage.info
       
-      - name: Upload coverage to Codecov
+      - name: Upload to Coveralls
         if: matrix.coverage && hashFiles('test/**') != ''
-        uses: codecov/codecov-action@v4
+        uses: coverallsapp/github-action@v2
         with:
-          files: build/coverage.info
-          fail_ci_if_error: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/coverage.info
+          format: lcov
       
       - name: Upload test results
         if: always()
