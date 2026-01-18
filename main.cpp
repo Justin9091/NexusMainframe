@@ -1,6 +1,4 @@
 #include "NexusMainFrame.hpp"
-#include <csignal>
-#include <iostream>
 
 
 int main() {

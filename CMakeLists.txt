@@ -51,6 +51,54 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
+# ------------------ CURL (STATIC, HTTPS) ------------------
+set(BUILD_CURL_EXE OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(CURL_STATICLIB ON CACHE BOOL "" FORCE)
+
+# Enable HTTPS
+set(CURL_DISABLE_HTTP OFF CACHE BOOL "" FORCE)
+set(CURL_DISABLE_HTTPS OFF CACHE BOOL "" FORCE)
+
+# SSL configuration per platform
+if(WIN32)
+    # SSL via Windows Schannel
+    set(CMAKE_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+    set(CURL_USE_SCHANNEL ON CACHE BOOL "" FORCE)
+    set(CURL_USE_OPENSSL OFF CACHE BOOL "" FORCE)
+else()
+    # SSL via OpenSSL on Unix/Linux
+    set(CMAKE_USE_SCHANNEL OFF CACHE BOOL "" FORCE)
+    set(CURL_USE_SCHANNEL OFF CACHE BOOL "" FORCE)
+    set(CURL_USE_OPENSSL ON CACHE BOOL "" FORCE)
+endif()
+
+# Disable unused protocols
+set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_LDAPS ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_TELNET ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_DICT ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_FILE ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_TFTP ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_RTSP ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_POP3 ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_IMAP ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_SMTP ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_GOPHER ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_MQTT ON CACHE BOOL "" FORCE)
+
+set(ENABLE_MANUAL OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+        curl
+        GIT_REPOSITORY https://github.com/curl/curl.git
+        GIT_TAG curl-8_5_0
+)
+
+FetchContent_MakeAvailable(curl)
+
+
 # Catch2 (tests)
 if(BUILD_TESTING)
     find_package(Catch2 3 QUIET)
@@ -102,12 +150,48 @@ add_library(nexus_core SHARED
         src/commands/HelpCommand.cpp
         includes/commands/EnableModuleCommand.hpp
         src/commands/EnableModuleCommand.cpp
+        includes/commands/DisableModuleCommand.hpp
+        src/commands/DisableModuleCommand.cpp
+        includes/Modules/operations/IModuleOperations.hpp
+        includes/Modules/operations/WindowsModuleOperations.hpp
+        includes/Modules/operations/ModuleOperationsFactory.hpp
+        src/modules/operations/ModuleOperationsFactory.cpp
+        includes/Modules/operations/LinuxModuleOperations.hpp
+        includes/Modules/ModuleManager.hpp
+        includes/Modules/ModuleUnloader.hpp
+        includes/Modules/LoadedModule.hpp
+        src/modules/ModuleUnloader.cpp
+        src/modules/ModuleManager.cpp
+        includes/commands/ScanCommand.hpp
+        includes/Modules/scanner/IModuleScanner.hpp
+        includes/Modules/scanner/WindowsModuleScanner.hpp
+        includes/Modules/scanner/LinuxModuleScanner.hpp
+        includes/Modules/scanner/ModuleScannerFactory.hpp
+        src/commands/ScanCommand.cpp
+        includes/config/Adapter/IConfigAdapter.hpp
+        includes/config/Adapter/LoadedModuleAdapter.hpp
+        includes/config/Adapter/LoadedModuleListAdapter.hpp
+        includes/commands/MonitorCommand.hpp
+        src/commands/MonitorCommand.cpp
+        includes/pathing/resolver/IPathResolver.hpp
+        includes/pathing/resolver/WindowsPathResolver.hpp
+        includes/pathing/resolver/UnixPathResolver.hpp
+        includes/pathing/resolver/PathResolverFactory.hpp
+        src/pathing/resolver/UnixPathResolver.cpp
+        src/pathing/resolver/WindowsPathResolver.cpp
+        src/pathing/resolver/PathResolverFactory.cpp
+        includes/exceptions/PathResolutionException.hpp
+        includes/pathing/PathValidator.hpp
+        includes/pathing/PathManager.hpp
+        src/pathing/PathResolver.cpp
+        includes/commands/DownloadCommand.hpp
+        src/commands/DownloadCommand.cpp
 )
 
 target_include_directories(nexus_core
         PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>  # ← WIJZIGING: voeg /includes toe
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>           # ← Behoud deze voor root files
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<BUILD_INTERFACE:${spdlog_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${croncpp_SOURCE_DIR}/include>
 )
@@ -116,6 +200,7 @@ target_link_libraries(nexus_core
         PRIVATE
         spdlog::spdlog
         nlohmann_json::nlohmann_json
+        CURL::libcurl
 )
 
 set_target_properties(nexus_core PROPERTIES
@@ -129,6 +214,10 @@ if(WIN32)
             PRIVATE NEXUS_CORE_EXPORTS
             INTERFACE NEXUS_CORE_IMPORTS
     )
+    set(CMAKE_USE_SCHANNEL ON CACHE INTERNAL "")
+else ()
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(nexus_core PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
 # ------------------ Module interface ------------------

@@ -1,6 +1,8 @@
 #include "../../includes/IPC/CommandServer.hpp"
 #include <sstream>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 #include "commands/Command.hpp"
 #include "commands/CommandRegistry.hpp"
@@ -59,12 +61,11 @@ void CommandServer::start() {
     setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR,
                (const char*)&opt, sizeof(opt));
 
-    // Bind to localhost - FIXED: use inet_pton instead of inet_addr
+    // Bind to localhost
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
 
-    // Use inet_pton for proper IPv4 address conversion
     if (inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr) <= 0) {
         _logger.logError("Invalid address / Address not supported");
         CLOSE_SOCKET(_serverSocket);
@@ -145,7 +146,7 @@ void CommandServer::handleClient(SocketType clientSocket) {
 #else
         ssize_t bytesRead = read(clientSocket, temp, sizeof(temp) - 1);
 #endif
-        if (bytesRead <= 0) break;  // client gesloten of error
+        if (bytesRead <= 0) break;
 
         temp[bytesRead] = '\0';
         buffer += temp;
@@ -160,13 +161,17 @@ void CommandServer::handleClient(SocketType clientSocket) {
             while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
 
             if (!line.empty()) {
-                std::string response = processCommand(line);
+                std::string response = processCommand(line, clientSocket);
 
+                // Als response leeg is, betekent het dat we in continuous mode zijn
+                // en handleContinuousMonitor de output verzorgt
+                if (!response.empty()) {
 #ifdef _WIN32
-                send(clientSocket, response.c_str(), (int)response.length(), 0);
+                    send(clientSocket, response.c_str(), (int)response.length(), 0);
 #else
-                write(clientSocket, response.c_str(), response.length());
+                    write(clientSocket, response.c_str(), response.length());
 #endif
+                }
             }
         }
     }
@@ -174,7 +179,7 @@ void CommandServer::handleClient(SocketType clientSocket) {
     CLOSE_SOCKET(clientSocket);
 }
 
-std::string CommandServer::processCommand(const std::string& input) {
+std::string CommandServer::processCommand(const std::string& input, SocketType clientSocket) {
     std::istringstream iss(input);
     std::string cmd;
     iss >> cmd;
@@ -187,7 +192,77 @@ std::string CommandServer::processCommand(const std::string& input) {
 
     std::lock_guard<std::mutex> lock(_handlersMutex);
     Command* command = CommandRegistry::getInstance().getCommand(cmd);
-    if (!command) return "Command not found: " + cmd;
+    if (!command) return "Command not found: " + cmd + "\n";
 
-    return command->execute(args);
+    std::string response = command->execute(args);
+
+    // Check of dit een continuous monitor request is
+    if (response.find("MONITOR_CONTINUOUS:") == 0) {
+        // Parse interval
+        int interval = 2;
+        try {
+            interval = std::stoi(response.substr(19));
+        } catch (...) {
+            interval = 2;
+        }
+
+        // Start continuous monitoring
+        handleContinuousMonitor(clientSocket, cmd, interval);
+        return ""; // Lege string = handleContinuousMonitor verzorgt output
+    }
+
+    return response + "\n";
+}
+
+void CommandServer::handleContinuousMonitor(SocketType clientSocket, const std::string& commandName, int interval) {
+    _logger.logInfo("Starting continuous monitor with " + std::to_string(interval) + "s interval");
+
+    Command* command = CommandRegistry::getInstance().getCommand(commandName);
+    if (!command) return;
+
+    // Buffer om te checken of client nog verbonden is
+    char testBuf[1];
+
+    while (true) {
+        // Check of socket nog open is
+#ifdef _WIN32
+        int flags = MSG_PEEK;
+        int result = recv(clientSocket, testBuf, 1, flags);
+        if (result == 0 || result == SOCKET_ERROR) {
+            _logger.logInfo("Client disconnected from continuous monitor");
+            break;
+        }
+#else
+        int result = recv(clientSocket, testBuf, 1, MSG_PEEK | MSG_DONTWAIT);
+        if (result == 0 || (result < 0 && errno != EAGAIN && errno != EWOULDBLOCK)) {
+            _logger.logInfo("Client disconnected from continuous monitor");
+            break;
+        }
+#endif
+
+        // Voer command uit zonder args (snapshot mode)
+        std::vector<std::string> emptyArgs;
+        std::string snapshot = command->execute(emptyArgs);
+
+        // Stuur snapshot naar client
+        std::string output = "\033[2J\033[H" + snapshot + "\n"; // Clear screen + output
+#ifdef _WIN32
+        int sendResult = send(clientSocket, output.c_str(), (int)output.length(), 0);
+        if (sendResult == SOCKET_ERROR) {
+            _logger.logInfo("Failed to send to client, stopping monitor");
+            break;
+        }
+#else
+        ssize_t sendResult = write(clientSocket, output.c_str(), output.length());
+        if (sendResult < 0) {
+            _logger.logInfo("Failed to send to client, stopping monitor");
+            break;
+        }
+#endif
+
+        // Wacht interval seconden
+        std::this_thread::sleep_for(std::chrono::seconds(interval));
+    }
+
+    _logger.logInfo("Continuous monitor stopped");
 }

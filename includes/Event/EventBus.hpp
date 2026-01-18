@@ -23,6 +23,16 @@ public:
     using VoidCallback = std::function<void(const Event&)>;
     using ResultCallback = std::function<Result(const Event&)>;
 
+    // Singleton access
+    static EventBus& getInstance() {
+        static EventBus instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    EventBus(const EventBus&) = delete;
+    EventBus& operator=(const EventBus&) = delete;
+
     int subscribe(const std::string& eventName, VoidCallback cb);
     int subscribe(const std::string& eventName, ResultCallback cb);
     void unsubscribe(const std::string& eventName, int id);
@@ -32,12 +42,15 @@ public:
     bool isActive() const;
 
 private:
+    // Private constructor
+    EventBus() : _logger{"EventBus"} {}
+
     struct Listener {
         int id;
-        VoidCallback cb;  // Gewoon één type!
+        VoidCallback cb;
     };
 
-    Logger _logger{"EventBus"};
+    Logger _logger;
     mutable std::mutex mtx;
     std::map<std::string, std::vector<Listener>> listeners;
     std::queue<Event> eventQueue;

@@ -5,10 +5,10 @@
 #include <iostream>
 
 #include "commands/ListCommand.hpp"
+#include "Modules/ModuleManager.hpp"
 
-ListCommand::ListCommand(ModuleLoader *moduleLoader) {
-    _moduleLoader = moduleLoader;
-}
+ListCommand::ListCommand(const ModuleManager& moduleManager)
+    : _moduleManager(moduleManager) {}
 
 std::string ListCommand::getName() {
     return "list";
@@ -21,8 +21,8 @@ std::string ListCommand::getDescription() {
 std::string ListCommand::execute(const std::vector<std::string> &args) {
     std::string list = "Enabled modules: \n\r";
 
-    for (const std::shared_ptr<IModule> & loaded_module : _moduleLoader->getLoadedModules()) {
-        list += " - " + loaded_module->getName() + "\n\r";
+    for (const LoadedModule& loaded_module : _moduleManager.getModules()) {
+        list += " - " + loaded_module.instance->getName() + "\n\r";
     }
 
     return list;
