@@ -336,13 +336,11 @@ elseif(APPLE)
                 COMPONENT Application
         )
     endif()
-
 elseif(UNIX)
-    # Install systemd service file
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/service/linux/nexus.service")
         install(FILES
                 ${CMAKE_CURRENT_SOURCE_DIR}/service/linux/nexus.service
-                DESTINATION /etc/systemd/system
+                DESTINATION share/nexusmainframe/systemd
                 PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
                 COMPONENT Application
         )
