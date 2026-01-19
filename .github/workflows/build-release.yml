@@ -1,5 +1,4 @@
 name: Build Release Packages
-
 on:
   push:
     branches: [ main, master ]
@@ -13,7 +12,6 @@ jobs:
   build:
     name: Build ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -90,4 +88,48 @@ jobs:
           if-no-files-found: warn
 
       - name: Create Release
-        if: star
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/*.exe
+            build/*.dmg
+            build/*.deb
+            build/*.rpm
+            build/*.zip
+            build/*.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## NexusMainFrame Smart Home Service - ${{ github.ref_name }}
+            
+            Cross-platform smart home service supporting Windows, Linux, and macOS.
+            
+            ### Installation Instructions:
+            
+            **Windows:**
+            - Download `NexusMainFrame-Windows.exe` installer
+            - Run the installer and follow the setup wizard
+            
+            **macOS:**
+            - Download `NexusMainFrame-macOS.dmg`
+            - Open the DMG and drag to Applications folder
+            - Or use the `.tar.gz` for manual installation
+            
+            **Linux:**
+            - **Debian/Ubuntu**: Download and install the `.deb` package
+              ```bash
+              sudo dpkg -i NexusMainFrame-*.deb
+              sudo apt-get install -f
+              ```
+            - **RedHat/Fedora/CentOS**: Download and install the `.rpm` package
+              ```bash
+              sudo rpm -i NexusMainFrame-*.rpm
+              ```
+            - **Generic Linux**: Extract the `.tar.gz` archive
+            
+            ### What's New
+            See the changelog below for details.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
