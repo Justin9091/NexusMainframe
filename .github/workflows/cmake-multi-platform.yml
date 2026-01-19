@@ -124,12 +124,21 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: List test executable
-        run: ls -l build
+        run: |
+          echo "=== Build directory structure ==="
+          find build -name "nexus_tests*" -o -name "*.dylib" -o -name "*.so" -o -name "*.dll"
+          echo ""
+          echo "=== CTest configuration ==="
+          cat build/DartConfiguration.tcl || echo "DartConfiguration.tcl not found"
 
       - name: Run tests with XML output
         working-directory: build
         run: |
           echo "Running tests with XML reporting..."
+          echo "=== Available tests ==="
+          ctest -N
+          echo ""
+          echo "=== Running tests ==="
           ctest --output-on-failure --verbose
 
       - name: Generate coverage

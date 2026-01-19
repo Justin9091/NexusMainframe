@@ -11,6 +11,9 @@ if (NOT Catch2_FOUND)
             GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(Catch2)
+
+    # Include Catch2's CMake module
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 endif()
 
 include(Catch)
@@ -21,7 +24,6 @@ add_executable(nexus_tests
         command/CommandRegistryTests.cpp
 )
 
-# Link libraries inclusief coverage
 target_link_libraries(nexus_tests PRIVATE
         coverage_config
         nexus_core
@@ -38,4 +40,18 @@ if(WIN32)
     )
 endif()
 
-catch_discover_tests(nexus_tests)
+# Discover tests with proper configuration
+catch_discover_tests(nexus_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        PROPERTIES
+        LABELS "unit"
+)
+
+# Add a manual test target as fallback
+add_test(
+        NAME nexus_tests_manual
+        COMMAND nexus_tests
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+message(STATUS "Test executable will be: $<TARGET_FILE:nexus_tests>")
