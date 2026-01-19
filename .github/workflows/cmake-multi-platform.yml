@@ -130,7 +130,7 @@ jobs:
         working-directory: build
         run: |
           echo "Running CTest..."
-          ctest --output-on-failure
+          ..\..\cmake-build-debug\tests\nexus_tests.exe -r xml -d yes --order lex
 
       - name: Generate coverage
         if: matrix.coverage
