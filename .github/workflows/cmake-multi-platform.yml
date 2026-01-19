@@ -123,9 +123,14 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel
 
+      - name: List test executable
+        run: ls -l build
+
       - name: Run tests
         working-directory: build
-        run: ctest --output-on-failure --verbose -C Release
+        run: |
+          echo "Running CTest..."
+          ctest --output-on-failure
 
       - name: Generate coverage
         if: matrix.coverage
