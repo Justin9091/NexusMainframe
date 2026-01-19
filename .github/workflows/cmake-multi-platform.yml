@@ -130,7 +130,7 @@ jobs:
         working-directory: build
         run: |
           echo "Running tests with XML reporting..."
-          ctest --output-on-failure --verbose --test-output-log junit.xml
+          ctest --output-on-failure --verbose
 
       - name: Generate coverage
         if: matrix.coverage
