@@ -126,11 +126,11 @@ jobs:
       - name: List test executable
         run: ls -l build
 
-      - name: Run tests
+      - name: Run tests with XML output
         working-directory: build
         run: |
-          echo "Running CTest..."
-          ..\..\cmake-build-debug\tests\nexus_tests.exe -r xml -d yes --order lex
+          echo "Running tests with XML reporting..."
+          ctest --output-on-failure --verbose --test-output-log junit.xml
 
       - name: Generate coverage
         if: matrix.coverage
