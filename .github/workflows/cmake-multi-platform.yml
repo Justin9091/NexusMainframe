@@ -123,35 +123,98 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel
 
-      - name: List test executable
+      - name: Build tests explicitly
+        run: cmake --build build --target nexus_tests --config Release
+
+      - name: List build directory (Unix)
+        if: runner.os != 'Windows'
         run: |
           echo "=== Build directory structure ==="
-          find build -name "nexus_tests*" -o -name "*.dylib" -o -name "*.so" -o -name "*.dll"
+          find build -type f -name "nexus_tests*" -o -name "*.so" -o -name "*.dylib" 2>/dev/null || echo "No test files found"
           echo ""
-          echo "=== CTest configuration ==="
-          cat build/DartConfiguration.tcl || echo "DartConfiguration.tcl not found"
+          echo "=== Tests directory ==="
+          ls -la build/tests/ 2>/dev/null || echo "No tests directory"
 
-      - name: Run tests with XML output
+      - name: List build directory (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Write-Host "=== Build directory structure ==="
+          Get-ChildItem -Recurse build -Filter "nexus_tests*" -ErrorAction SilentlyContinue | Select-Object FullName
+          Write-Host ""
+          Write-Host "=== Tests directory ==="
+          Get-ChildItem build\tests -ErrorAction SilentlyContinue | Select-Object Name
+
+      - name: Run tests directly (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "=== Testing direct execution ==="
+          if [ -f "build/tests/nexus_tests" ]; then
+            echo "Found: build/tests/nexus_tests"
+            ./build/tests/nexus_tests --list-tests
+            ./build/tests/nexus_tests --reporter console
+          elif [ -f "build/bin/nexus_tests" ]; then
+            echo "Found: build/bin/nexus_tests"
+            ./build/bin/nexus_tests --list-tests
+            ./build/bin/nexus_tests --reporter console
+          else
+            echo "ERROR: nexus_tests executable not found!"
+            exit 1
+          fi
+
+      - name: Run tests directly (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Write-Host "=== Testing direct execution ==="
+          $testPaths = @(
+            "build\tests\Release\nexus_tests.exe",
+            "build\tests\nexus_tests.exe",
+            "build\bin\Release\nexus_tests.exe",
+            "build\Release\nexus_tests.exe"
+          )
+          
+          $found = $false
+          foreach ($path in $testPaths) {
+            if (Test-Path $path) {
+              Write-Host "Found: $path"
+              & $path --list-tests
+              & $path --reporter console
+              $found = $true
+              break
+            }
+          }
+          
+          if (-not $found) {
+            Write-Host "ERROR: nexus_tests.exe not found in any expected location!"
+            exit 1
+          }
+
+      - name: Run CTest (Unix)
+        if: runner.os != 'Windows'
         working-directory: build
         run: |
-          echo "Running tests with XML reporting..."
-          echo "=== Available tests ==="
-          ctest -N
-          echo ""
-          echo "=== Running tests ==="
-          ctest --output-on-failure --verbose
+          echo "=== Running CTest ==="
+          ctest --output-on-failure --verbose -C Release
+
+      - name: Run CTest (Windows)
+        if: runner.os == 'Windows'
+        working-directory: build
+        run: ctest --output-on-failure --verbose -C Release
 
       - name: Generate coverage
         if: matrix.coverage
         working-directory: build
         run: |
-          # Check if tests exist
+          # Check if tests ran successfully
           if [ ! -f "tests/nexus_tests" ] && [ ! -f "bin/nexus_tests" ]; then
             echo "⚠️ No test executable found, skipping coverage"
             exit 0
           fi
           
           # Generate coverage
+          echo "=== Generating coverage report ==="
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' '*/tests/*' '*/_deps/*' --output-file coverage.info
           echo "=== Coverage Summary ==="
