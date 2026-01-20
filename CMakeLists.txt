@@ -98,24 +98,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(curl)
 
-
-# Catch2 (tests)
-if (BUILD_TESTING)
-    find_package(Catch2 3 QUIET)
-    if (NOT Catch2_FOUND)
-        FetchContent_Declare(
-                Catch2
-                GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-                GIT_TAG v3.5.1
-                GIT_SHALLOW TRUE
-        )
-        FetchContent_MakeAvailable(Catch2)
-        list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-    endif ()
-    include(CTest)
-    include(Catch)
-endif ()
-
 # ------------------ Core library ------------------
 add_library(nexus_core SHARED
         includes/Logger/Logger.hpp
@@ -192,6 +174,18 @@ add_library(nexus_core SHARED
         includes/mainframe/service/ServiceHostFactory.hpp
         src/mainframe/service/ServiceHostFactory.cpp
         includes/mainframe/service/ForegroundServiceHost.hpp
+)
+
+set_target_properties(nexus_core PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib
+        LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib
+        ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib
 )
 
 target_include_directories(nexus_core
@@ -526,3 +520,33 @@ set(CPACK_SOURCE_IGNORE_FILES
         *.swo
         *~
 )
+
+# ------------------ Coverage Configuration ------------------
+if (ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        add_library(coverage_config INTERFACE)
+
+        target_compile_options(coverage_config INTERFACE
+                --coverage
+                -O0
+                -g
+        )
+
+        target_link_options(coverage_config INTERFACE
+                --coverage
+        )
+
+        # Link coverage direct aan nexus_core
+        target_link_libraries(nexus_core PRIVATE coverage_config)
+
+        message(STATUS "Code coverage enabled")
+    else()
+        message(WARNING "Code coverage requested but compiler is not GCC or Clang")
+        add_library(coverage_config INTERFACE)
+    endif()
+else()
+    # Maak een dummy interface als coverage uit staat
+    add_library(coverage_config INTERFACE)
+endif()
+
+add_subdirectory(tests)
