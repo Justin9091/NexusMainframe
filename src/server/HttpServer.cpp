@@ -2,29 +2,30 @@
 #include <iostream>
 #include <sstream>
 
-HttpServer::HttpServer(ModuleManager& modules,
-                       CommandRegistry& commands,
-                       EventBus& eventBus,
-                       Scheduler& scheduler,
-                       MQTTClient& mqtt)
+HttpServer::HttpServer(ModuleManager &modules,
+                       CommandRegistry &commands,
+                       EventBus &eventBus,
+                       Scheduler &scheduler,
+                       MQTTClient &mqtt)
     : _modules(modules),
       _commands(commands),
       _eventBus(eventBus),
       _scheduler(scheduler),
-      _mqtt(mqtt) {}
+      _mqtt(mqtt) {
+}
 
 void HttpServer::start(int port) {
     if (_running) return;
 
-    _running   = true;
+    _running = true;
     _startTime = std::chrono::steady_clock::now();
 
     registerRoutes();
     bindRoutes();
 
-    _server.set_logger([](const auto& req, const auto& res) {
+    _server.set_logger([](const auto &req, const auto &res) {
         std::cout << req.method << " " << req.path
-                  << " -> " << res.status << std::endl;
+                << " -> " << res.status << std::endl;
     });
 
     _serverThread = std::thread([this, port]() {
@@ -53,37 +54,37 @@ void HttpServer::registerRoutes() {
     _routes = {
         {
             "/api/status", "status", HttpMethod::GET,
-            [this](const httplib::Request&, httplib::Response& res) {
+            [this](const httplib::Request &, httplib::Response &res) {
                 res.set_content(toJson(true, "OK"), "application/json");
             }
         },
         {
             "/api/health", "health", HttpMethod::GET,
-            [this](const httplib::Request&, httplib::Response& res) {
+            [this](const httplib::Request &, httplib::Response &res) {
                 long long uptime = uptimeSeconds();
 
                 std::stringstream ss;
                 ss << "{"
-                   << "\"status\": \"ok\","
-                   << "\"uptime_seconds\": " << uptime << ","
-                   << "\"uptime_human\": \""
-                       << (uptime / 3600)      << "h "
-                       << (uptime % 3600 / 60) << "m "
-                       << (uptime % 60)        << "s\","
-                   << "\"mqtt_connected\": " << (_mqtt.isConnected() ? "true" : "false") << ","
-                   << "\"modules_loaded\": " << _modules.getModules().size()
-                   << "}";
+                        << "\"status\": \"ok\","
+                        << "\"uptime_seconds\": " << uptime << ","
+                        << "\"uptime_human\": \""
+                        << (uptime / 3600) << "h "
+                        << (uptime % 3600 / 60) << "m "
+                        << (uptime % 60) << "s\","
+                        << "\"mqtt_connected\": " << (_mqtt.isConnected() ? "true" : "false") << ","
+                        << "\"modules_loaded\": " << _modules.getModules().size()
+                        << "}";
 
                 res.set_content(ss.str(), "application/json");
             }
         },
         {
             "/api/modules", "modules", HttpMethod::GET,
-            [this](const httplib::Request&, httplib::Response& res) {
+            [this](const httplib::Request &, httplib::Response &res) {
                 auto modules = _modules.getModules();
 
                 std::string out;
-                for (auto& m : modules)
+                for (auto &m: modules)
                     out += m.name + ",";
 
                 res.set_content(toJson(true, out), "application/json");
@@ -91,16 +92,15 @@ void HttpServer::registerRoutes() {
         },
         {
             "/api/command", "command", HttpMethod::POST,
-            [this](const httplib::Request& req, httplib::Response& res) {
+            [this](const httplib::Request &req, httplib::Response &res) {
                 try {
                     std::string cmd = req.has_param("cmd")
-                        ? req.get_param_value("cmd")
-                        : req.body;
+                                          ? req.get_param_value("cmd")
+                                          : req.body;
 
                     // auto result = _commands.execute(cmd);
                     res.set_content(toJson(true, "idk"), "application/json");
-                }
-                catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     res.status = 500;
                     res.set_content(toJson(false, e.what()), "application/json");
                 }
@@ -108,27 +108,61 @@ void HttpServer::registerRoutes() {
         },
         {
             "/api/metrics", "metrics", HttpMethod::GET,
-            [this](const httplib::Request&, httplib::Response& res) {
+            [this](const httplib::Request &, httplib::Response &res) {
+                long long uptime = uptimeSeconds();
 
+                // Memory usage via /proc (Linux)
+                long vmRss = 0;
+                if (FILE *f = fopen("/proc/self/status", "r")) {
+                    char line[128];
+                    while (fgets(line, sizeof(line), f)) {
+                        if (strncmp(line, "VmRSS:", 6) == 0) {
+                            sscanf(line + 6, " %ld", &vmRss); // kB
+                            break;
+                        }
+                    }
+                    fclose(f);
+                }
+
+                auto modules = _modules.getModules();
+
+                std::stringstream ss;
+                ss << "{"
+                        << "\"uptime_seconds\": " << uptime << ","
+                        << "\"mqtt_connected\": " << (_mqtt.isConnected() ? "true" : "false") << ","
+                        << "\"modules_loaded\": " << modules.size() << ","
+                        << "\"memory_rss_kb\": " << vmRss << ","
+                        << "\"endpoints_registered\": " << _routes.size()
+                        << "}";
+
+                res.set_content(ss.str(), "application/json");
             }
-        }
+        },
     };
 }
 
 void HttpServer::bindRoutes() {
-    for (auto& endpoint : _routes) {
+    for (auto &endpoint: _routes) {
         switch (endpoint.getMethod()) {
             case HttpMethod::GET:
-                _server.Get(endpoint.getPath(),    [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Get(endpoint.getPath(), [&endpoint](const httplib::Request &req, httplib::Response &res) {
+                    endpoint.handle(req, res);
+                });
                 break;
             case HttpMethod::POST:
-                _server.Post(endpoint.getPath(),   [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Post(endpoint.getPath(), [&endpoint](const httplib::Request &req, httplib::Response &res) {
+                    endpoint.handle(req, res);
+                });
                 break;
             case HttpMethod::PUT:
-                _server.Put(endpoint.getPath(),    [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Put(endpoint.getPath(), [&endpoint](const httplib::Request &req, httplib::Response &res) {
+                    endpoint.handle(req, res);
+                });
                 break;
             case HttpMethod::PATCH:
-                _server.Patch(endpoint.getPath(),  [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Patch(endpoint.getPath(), [&endpoint](const httplib::Request &req, httplib::Response &res) {
+                    endpoint.handle(req, res);
+                });
                 break;
             default:
                 std::cerr << "[HttpServer] Unsupported method: " << endpoint.toString() << std::endl;
@@ -139,12 +173,12 @@ void HttpServer::bindRoutes() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-std::string HttpServer::toJson(bool success, const std::string& output) {
+std::string HttpServer::toJson(bool success, const std::string &output) {
     std::stringstream ss;
     ss << "{"
-       << "\"success\": " << (success ? "true" : "false") << ","
-       << "\"output\": \"" << output << "\""
-       << "}";
+            << "\"success\": " << (success ? "true" : "false") << ","
+            << "\"output\": \"" << output << "\""
+            << "}";
     return ss.str();
 }
 
