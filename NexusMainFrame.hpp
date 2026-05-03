@@ -8,12 +8,13 @@
 #include "Modules/ModuleManager.hpp"
 #include "mqtt/MQTTClient.hpp"
 #include "Scheduler/Scheduler.hpp"
+#include "server/HttpServer.hpp"
 
 class NexusMainFrame {
 private:
     std::unique_ptr<ModuleManager> _moduleManager;
     Scheduler _scheduler;
-    CommandServer _server;
+    std::unique_ptr<HttpServer> _httpServer;
     std::unique_ptr<MQTTClient> _mqttClient;
 
 public:
