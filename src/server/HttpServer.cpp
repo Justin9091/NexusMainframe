@@ -106,6 +106,12 @@ void HttpServer::registerRoutes() {
                 }
             }
         },
+        {
+            "/api/metrics", "metrics", HttpMethod::GET,
+            [this](const httplib::Request&, httplib::Response& res) {
+
+            }
+        }
     };
 }
 
