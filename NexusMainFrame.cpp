@@ -73,8 +73,14 @@ void NexusMainFrame::start() {
             }
         });
 
-        // Start server (ZONDER aparte thread!)
-        _server.start();
+        _httpServer = std::make_unique<HttpServer>(
+            *_moduleManager,
+            CommandRegistry::getInstance(),
+            EventBus::getInstance(),
+            _scheduler,
+            *_mqttClient
+        );
+        _httpServer->start(8080);
         _running = true;
 
     } catch(const std::exception& e) {
@@ -148,8 +154,6 @@ void NexusMainFrame::stop() {
                 }
             }
         }
-
-        _server.stop();
     } catch(const std::exception& e) {
         std::cerr << "[Stop Exception] " << e.what() << "\n";
     } catch(...) {
