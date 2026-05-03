@@ -17,7 +17,9 @@ option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
 # ================== FIX FOR MINGW LINKER ==================
 # Fix: relocation truncated to fit (.debug_frame overflow)
-add_compile_options(-Wa,-mbig-obj)
+if (MINGW)
+    add_compile_options(-Wa,-mbig-obj)
+endif()
 
 # ------------------ Dependencies ------------------
 include(FetchContent)
