@@ -14,31 +14,26 @@ jobs:
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
       - name: Install tools
         run: |
           sudo apt-get update
           sudo apt-get install -y clang-tidy clang-format
-
       - name: Check formatting
         continue-on-error: true
         run: |
           echo "⚠️ Formatting check (non-blocking)"
           find src includes -type f \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) \
             -exec clang-format --dry-run --Werror {} + || true
-
       - name: Install dependencies
         run: |
           sudo apt-get install -y libssl-dev ninja-build
-
       - name: Configure CMake
         run: cmake -B build -G Ninja -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-
       - name: Run clang-tidy
         continue-on-error: true
         run: |
@@ -50,7 +45,6 @@ jobs:
     name: ${{ matrix.os }} - ${{ matrix.compiler }}
     needs: lint
     runs-on: ${{ matrix.os }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -61,27 +55,22 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             coverage: true
-
           - os: ubuntu-latest
             compiler: clang
             c_compiler: clang
             cpp_compiler: clang++
-            coverage: false
-
           # Windows builds
           - os: windows-latest
             compiler: msvc
             c_compiler: cl
             cpp_compiler: cl
             coverage: false
-
           # macOS builds
           - os: macos-latest
             compiler: clang
             c_compiler: clang
             cpp_compiler: clang++
             coverage: false
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -174,7 +163,7 @@ jobs:
             "build\bin\Release\nexus_tests.exe",
             "build\Release\nexus_tests.exe"
           )
-          
+
           $found = $false
           foreach ($path in $testPaths) {
             if (Test-Path $path) {
@@ -185,7 +174,7 @@ jobs:
               break
             }
           }
-          
+
           if (-not $found) {
             Write-Host "ERROR: nexus_tests.exe not found in any expected location!"
             exit 1
@@ -207,13 +196,11 @@ jobs:
         if: matrix.coverage
         working-directory: build
         run: |
-          # Check if tests ran successfully
           if [ ! -f "tests/nexus_tests" ] && [ ! -f "bin/nexus_tests" ]; then
             echo "⚠️ No test executable found, skipping coverage"
             exit 0
           fi
-          
-          # Generate coverage
+
           echo "=== Generating coverage report ==="
           lcov --capture --directory . --output-file coverage.info
           lcov --remove coverage.info '/usr/*' '*/tests/*' '*/_deps/*' --output-file coverage.info
