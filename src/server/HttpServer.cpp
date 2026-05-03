@@ -106,6 +106,38 @@ void HttpServer::registerRoutes() {
                 }
             }
         },
+        {
+            "/api/metrics", "metrics", HttpMethod::GET,
+            [this](const httplib::Request&, httplib::Response& res) {
+                long long uptime = uptimeSeconds();
+
+                // Memory usage via /proc (Linux)
+                long vmRss = 0;
+                if (FILE* f = fopen("/proc/self/status", "r")) {
+                    char line[128];
+                    while (fgets(line, sizeof(line), f)) {
+                        if (strncmp(line, "VmRSS:", 6) == 0) {
+                            sscanf(line + 6, " %ld", &vmRss); // kB
+                            break;
+                        }
+                    }
+                    fclose(f);
+                }
+
+                auto modules = _modules.getModules();
+
+                std::stringstream ss;
+                ss << "{"
+                   << "\"uptime_seconds\": " << uptime << ","
+                   << "\"mqtt_connected\": " << (_mqtt.isConnected() ? "true" : "false") << ","
+                   << "\"modules_loaded\": " << modules.size() << ","
+                   << "\"memory_rss_kb\": " << vmRss << ","
+                   << "\"endpoints_registered\": " << _routes.size()
+                   << "}";
+
+                res.set_content(ss.str(), "application/json");
+            }
+        },
     };
 }
 
@@ -113,16 +145,16 @@ void HttpServer::bindRoutes() {
     for (auto& endpoint : _routes) {
         switch (endpoint.getMethod()) {
             case HttpMethod::GET:
-                _server.Get(endpoint.getPath(),    [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Get(endpoint.getPath(),   [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
                 break;
             case HttpMethod::POST:
-                _server.Post(endpoint.getPath(),   [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Post(endpoint.getPath(),  [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
                 break;
             case HttpMethod::PUT:
-                _server.Put(endpoint.getPath(),    [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Put(endpoint.getPath(),   [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
                 break;
             case HttpMethod::PATCH:
-                _server.Patch(endpoint.getPath(),  [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
+                _server.Patch(endpoint.getPath(), [&endpoint](const httplib::Request& req, httplib::Response& res) { endpoint.handle(req, res); });
                 break;
             default:
                 std::cerr << "[HttpServer] Unsupported method: " << endpoint.toString() << std::endl;
