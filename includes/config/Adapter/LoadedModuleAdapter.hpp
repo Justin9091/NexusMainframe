@@ -5,6 +5,11 @@
 #include "Modules/ModuleEntry.hpp"
 #include <nlohmann/json.hpp>
 
+/**
+ * @brief IConfigAdapter that serialises/deserialises a single ModuleEntry.
+ *
+ * JSON representation: @c {"name":"my-module","path":"/path/to/my-module.dll"}
+ */
 class LoadedModuleAdapter : public IConfigAdapter<ModuleEntry> {
 public:
     nlohmann::json serialize(const ModuleEntry& entry) const override {

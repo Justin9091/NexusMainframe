@@ -4,6 +4,11 @@
 #include <windows.h>
 #include <string>
 
+/**
+ * @brief Windows implementation of IModuleOperations using LoadLibrary/FreeLibrary.
+ *
+ * @note Only compiled on Windows (@c _WIN32).
+ */
 class WindowsModuleOperations : public IModuleOperations {
 public:
     void* loadLibrary(const std::string& libraryPath) override {

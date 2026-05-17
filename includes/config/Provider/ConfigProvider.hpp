@@ -13,25 +13,48 @@
 #include "config/Adapter/IConfigAdapter.hpp"
 #include "config/Source/IConfigSource.hpp"
 #include "config/Source/JsonConfigSource.hpp"
-// ConfigProvider.hpp
+/**
+ * @brief Type-safe configuration store backed by a file source and typed adapters.
+ *
+ * ConfigProvider owns a ConfigMap (loaded from an IConfigSource) and a registry
+ * of IConfigAdapter<T> adapters.  Typed structs are stored and retrieved via
+ * setStruct<T>() / getStruct<T>() using the appropriate adapter.
+ *
+ * @code
+ * auto provider = ConfigProviderFactory::create("config.json");
+ * provider.registerAdapter<ModuleEntry>(
+ *     std::make_shared<LoadedModuleAdapter>());
+ * provider.load("config.json");
+ *
+ * auto entry = provider.getStruct<ModuleEntry>("modules");
+ * @endcode
+ */
 class ConfigProvider {
-private:
-    ConfigMap config_;
-    std::unique_ptr<IConfigSource> source_;
-    std::unordered_map<std::type_index, std::shared_ptr<void>> adapters_;
-
 public:
+    /**
+     * @param source  Config source used for save(); the actual data is loaded
+     *                separately via load().
+     */
     explicit ConfigProvider(std::unique_ptr<IConfigSource> source)
-        : source_(std::move(source)) {
-    }
+        : source_(std::move(source)) {}
 
-    // Adapter registreren
+    /**
+     * @brief Registers a typed adapter for serialisation/deserialisation.
+     * @tparam T      Struct type to handle.
+     * @param adapter  Adapter implementation.
+     */
     template<typename T>
     void registerAdapter(std::shared_ptr<IConfigAdapter<T>> adapter) {
         adapters_[typeid(T)] = adapter;
     }
 
-    // Struct opslaan via adapter
+    /**
+     * @brief Serialises a struct and stores it under @p key.
+     * @tparam T    Struct type; an adapter must be registered for it.
+     * @param key   Config map key.
+     * @param value Value to store.
+     * @throws std::runtime_error if no adapter is registered for T.
+     */
     template<typename T>
     void setStruct(const std::string &key, const T &value) {
         auto it = adapters_.find(typeid(T));
@@ -43,7 +66,14 @@ public:
         config_[key] = adapter->serialize(value);
     }
 
-    // Struct ophalen via adapter
+    /**
+     * @brief Deserialises a struct stored under @p key.
+     * @tparam T   Struct type; an adapter must be registered for it.
+     * @param key  Config map key.
+     * @return The deserialised struct, or std::nullopt if the key is absent.
+     * @throws std::runtime_error if no adapter is registered for T or the
+     *         stored value is not a JSON object.
+     */
     template<typename T>
     std::optional<T> getStruct(const std::string &key) const {
         auto it = config_.find(key);
@@ -63,7 +93,11 @@ public:
         return adapter->deserialize(*jsonVal);
     }
 
-    // 👇 VOEG DEZE METHODE TOE
+    /**
+     * @brief Loads all key/value pairs from a JSON file into the internal map.
+     * @param filepath  Absolute path to the JSON file.
+     * @throws std::runtime_error if the file cannot be opened or is not valid JSON.
+     */
     void load(const std::string& filepath) {
         std::ifstream in(filepath);
         if (!in.is_open()) {
@@ -79,6 +113,11 @@ public:
         }
     }
 
+    /**
+     * @brief Serialises the internal map to a pretty-printed JSON file.
+     * @param filepath  Absolute path to the output file.
+     * @throws std::runtime_error if the file cannot be opened.
+     */
     void save(const std::string& filepath) {
         if (!source_) {
             throw std::runtime_error("No config source available to save");

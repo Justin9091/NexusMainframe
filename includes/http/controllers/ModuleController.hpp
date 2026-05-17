@@ -4,6 +4,14 @@
 
 namespace httplib { struct Request; struct Response; }
 
+/**
+ * @brief HTTP controller for module management endpoints.
+ *
+ * Exposes:
+ * - GET  /api/modules                   — list all loaded modules
+ * - POST /api/modules/:name/enable      — load and start a module
+ * - POST /api/modules/:name/disable     — unload a module
+ */
 class ModuleController : public Controller<ModuleController> {
 public:
     explicit ModuleController(ModuleService& service);

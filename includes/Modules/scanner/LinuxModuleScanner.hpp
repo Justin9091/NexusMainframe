@@ -12,6 +12,13 @@
 
 namespace fs = std::filesystem;
 
+/**
+ * @brief Linux IModuleScanner implementation using std::filesystem.
+ *
+ * Recursively scans for @c .so files; does not validate the module binary.
+ *
+ * @note Only compiled on non-Windows platforms.
+ */
 class LinuxModuleScanner : public IModuleScanner {
 public:
     std::vector<ModuleInfo> scanDirectory(const std::string& directory) override {

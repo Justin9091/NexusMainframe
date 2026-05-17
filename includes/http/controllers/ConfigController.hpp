@@ -4,6 +4,13 @@
 
 namespace httplib { struct Request; struct Response; }
 
+/**
+ * @brief HTTP controller for reading and updating NexusConfig at runtime.
+ *
+ * Exposes:
+ * - GET   /api/config   — return the current configuration as JSON
+ * - PATCH /api/config   — apply partial updates to the configuration
+ */
 class ConfigController : public Controller<ConfigController> {
 public:
     explicit ConfigController(NexusConfig& config);

@@ -8,8 +8,17 @@
 #include "IModuleOperations.hpp"
 #include <memory>
 
+/**
+ * @brief Factory that creates the platform-appropriate IModuleOperations.
+ *
+ * Returns WindowsModuleOperations on Windows and LinuxModuleOperations elsewhere.
+ */
 class ModuleOperationsFactory {
 public:
+    /**
+     * @brief Creates the platform-specific IModuleOperations implementation.
+     * @return Shared pointer to the operations implementation.
+     */
     static std::shared_ptr<IModuleOperations> create();
 };
 

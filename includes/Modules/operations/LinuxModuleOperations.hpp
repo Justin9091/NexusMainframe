@@ -9,6 +9,11 @@
 
 #include <dlfcn.h>
 
+/**
+ * @brief Linux/Unix implementation of IModuleOperations using dlopen/dlsym/dlclose.
+ *
+ * @note Only compiled on non-Windows platforms.
+ */
 class LinuxModuleOperations : public IModuleOperations {
 public:
     void* loadLibrary(const std::string& libraryPath) override {

@@ -23,6 +23,16 @@
 
 namespace fs = std::filesystem;
 
+/**
+ * @brief Windows IModuleScanner implementation using Win32 FindFirstFileEx APIs.
+ *
+ * Iteratively scans directory trees (non-recursive stack) for .dll files,
+ * skips known non-module directories (.git, build, node_modules, …), does not
+ * follow symlinks/junctions, and validates each candidate by loading it and
+ * calling @c createModule().
+ *
+ * @note Only compiled on Windows (@c _WIN32).
+ */
 class WindowsModuleScanner final : public IModuleScanner {
 public:
     WindowsModuleScanner()

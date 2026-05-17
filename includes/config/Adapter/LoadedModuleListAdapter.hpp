@@ -6,6 +6,11 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 
+/**
+ * @brief IConfigAdapter that serialises/deserialises a list of ModuleEntry objects.
+ *
+ * JSON representation: array of @c {"name":"…","path":"…"} objects.
+ */
 class LoadedModuleListAdapter : public IConfigAdapter<std::vector<ModuleEntry>> {
 public:
     nlohmann::json serialize(const std::vector<ModuleEntry>& entries) const override {

@@ -14,8 +14,17 @@
     #include "LinuxModuleScanner.hpp"
 #endif
 
+/**
+ * @brief Factory that creates the platform-appropriate IModuleScanner.
+ *
+ * Returns WindowsModuleScanner on Windows and LinuxModuleScanner elsewhere.
+ */
 class ModuleScannerFactory {
 public:
+    /**
+     * @brief Creates the platform-specific IModuleScanner implementation.
+     * @return Owning pointer to the scanner.
+     */
     static std::unique_ptr<IModuleScanner> create() {
 #ifdef _WIN32
         return std::make_unique<WindowsModuleScanner>();

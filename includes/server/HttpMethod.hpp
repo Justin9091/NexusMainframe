@@ -11,16 +11,28 @@
 #undef DELETE
 #endif
 
+/**
+ * @brief Enumeration of supported HTTP request methods.
+ *
+ * @note The @c DELETE enumerator conflicts with the Windows SDK macro of the
+ *       same name.  The macro is undefined at the top of this header.
+ */
 enum class HttpMethod {
-    GET,
-    POST,
-    PATCH,
-    PUT,
-    DELETE,
-    HEAD,
-    OPTIONS
+    GET,     ///< HTTP GET — retrieve a resource.
+    POST,    ///< HTTP POST — create a resource.
+    PATCH,   ///< HTTP PATCH — partially update a resource.
+    PUT,     ///< HTTP PUT — replace a resource.
+    DELETE,  ///< HTTP DELETE — remove a resource.
+    HEAD,    ///< HTTP HEAD — retrieve headers only.
+    OPTIONS  ///< HTTP OPTIONS — query supported methods.
 };
 
+/**
+ * @brief Converts an HttpMethod enumerator to its uppercase string representation.
+ * @param method  HTTP method value.
+ * @return String such as @c "GET", @c "POST", etc.
+ * @throws std::invalid_argument if @p method is an unrecognised value.
+ */
 inline std::string httpMethodToString(HttpMethod method) {
     switch (method) {
         case HttpMethod::GET:     return "GET";
