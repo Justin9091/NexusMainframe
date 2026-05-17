@@ -1,29 +1,26 @@
-#ifndef NEXUSMAINFRAME_HPP
-#define NEXUSMAINFRAME_HPP
-
+#pragma once
 #include <memory>
+#include <vector>
 #include <atomic>
-
-#include "IPC/CommandServer.hpp"
-#include "Modules/ModuleManager.hpp"
-#include "mqtt/MQTTClient.hpp"
+#include <thread>
+#include "includes/services/IService.hpp"
 #include "Scheduler/Scheduler.hpp"
-#include "server/HttpServer.hpp"
+#include "config/NexusConfig.hpp"
 
 class NexusMainFrame {
-private:
-    std::unique_ptr<ModuleManager> _moduleManager;
-    Scheduler _scheduler;
-    std::unique_ptr<HttpServer> _httpServer;
-    std::unique_ptr<MQTTClient> _mqttClient;
-
 public:
-    std::thread _mainThread;
-    std::atomic<bool> _running{true};
-
+    void addService(std::unique_ptr<IService> service);
     void run();
-    void start();
     void stop();
-};
 
-#endif
+private:
+    std::vector<std::unique_ptr<IService>> _services;
+    Scheduler          _scheduler;
+    std::atomic<bool>  _running{false};
+    NexusConfig        _config;
+
+    void initPaths();
+    void registerBuiltinServices();
+    void startAll();
+    void stopAll();
+};

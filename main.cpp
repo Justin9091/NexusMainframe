@@ -33,21 +33,21 @@ int main() {
     try {
         auto service = ServiceHostFactory::create();
         NexusMainFrame mainFrame;
+        std::thread mainThread;
 
         service->run(
             [&]() { // start callback
                 safe_callback([&]() {
-                    mainFrame._running = true;
-                    mainFrame._mainThread = safe_thread([&]() {
+                    mainThread = safe_thread([&]() {
                         mainFrame.run();
                     });
                 });
             },
             [&]() { // stop callback
                 safe_callback([&]() {
-                    mainFrame._running = false;
-                    if (mainFrame._mainThread.joinable()) {
-                        mainFrame._mainThread.join();
+                    mainFrame.stop();
+                    if (mainThread.joinable()) {
+                        mainThread.join();
                     }
                 });
             }

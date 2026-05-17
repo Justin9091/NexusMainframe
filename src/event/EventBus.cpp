@@ -24,7 +24,7 @@ int EventBus::subscribe(const std::string &eventName, ResultCallback cb) {
     // Wrap ResultCallback in een VoidCallback
     return subscribe(eventName, [cb = std::move(cb), this, eventName](const Event& event) {
         Result result = cb(event);
-        if (result != Result::SUCCESS) {
+        if (!result.isOk()) {
             _logger.logWarning("Result callback returned non-SUCCESS for event " + eventName);
         }
     });

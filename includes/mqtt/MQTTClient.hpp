@@ -31,6 +31,7 @@ public:
 
 private:
     void receiveLoop();
+    void pingLoop();
     void handlePacket(const std::vector<uint8_t>& data);
 
     bool sendPacket(const std::vector<uint8_t>& packet);
@@ -45,6 +46,7 @@ private:
 
     int sock{-1};
     std::thread rxThread;
+    std::thread pingThread;
     std::atomic<bool> running{false};
 };
 

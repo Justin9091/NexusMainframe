@@ -11,7 +11,7 @@
     #include "Modules/operations/LinuxModuleOperations.hpp"
 #endif
 
-std::unique_ptr<IModuleOperations> ModuleOperationsFactory::create() {
+std::shared_ptr<IModuleOperations> ModuleOperationsFactory::create() {
 #ifdef _WIN32
         return std::make_unique<WindowsModuleOperations>();
 #else

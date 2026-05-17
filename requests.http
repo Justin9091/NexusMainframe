@@ -1,0 +1,16 @@
+@baseUrl = http://localhost:8080
+
+### Metrics ophalen
+GET {{baseUrl}}/api/metrics
+
+### Module lijst ophalen
+GET {{baseUrl}}/api/modules
+Accept: application/json
+
+### Module enablen
+POST {{baseUrl}}/api/modules/test/enable
+Content-Type: application/json
+
+### Module enablen
+POST {{baseUrl}}/api/modules/Chromecast/enable
+Content-Type: application/json

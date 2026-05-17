@@ -68,7 +68,8 @@ bool MQTTClient::connect() {
     sendPacket(packet);
 
     running = true;
-    rxThread = std::thread(&MQTTClient::receiveLoop, this);
+    rxThread   = std::thread(&MQTTClient::receiveLoop, this);
+    pingThread = std::thread(&MQTTClient::pingLoop, this);
 
     std::cout << "[MQTT] Connected! Receive thread started." << std::endl;
     return true;
@@ -81,7 +82,8 @@ bool MQTTClient::isConnected() {
 void MQTTClient::disconnect() {
     std::cout << "[MQTT] Disconnecting..." << std::endl;
     running = false;
-    if (rxThread.joinable()) rxThread.join();
+    if (rxThread.joinable())   rxThread.join();
+    if (pingThread.joinable()) pingThread.join();
 
 #ifdef _WIN32
     closesocket(sock);
@@ -140,6 +142,18 @@ bool MQTTClient::publish(const std::string& topic, const std::string& payload) {
     pkt.insert(pkt.end(), body.begin(), body.end());
 
     return sendPacket(pkt);
+}
+
+void MQTTClient::pingLoop() {
+    while (running) {
+        for (int i = 0; i < 45 && running; ++i)
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        if (!running) break;
+
+        std::vector<uint8_t> pingreq = {0xC0, 0x00};
+        sendPacket(pingreq);
+    }
 }
 
 void MQTTClient::receiveLoop() {
@@ -262,10 +276,14 @@ void MQTTClient::handlePacket(const std::vector<uint8_t>& data) {
         std::cout << "[MQTT] Payload: \"" << payload << "\"" << std::endl;
         std::cout << "[MQTT] =====================================" << std::endl;
 
-        // Publish to event bus
+        // Publish to event bus: topic-specific + generic
         eventBus.publish(Event{
             .name = "mqtt:" + topic,
             .data = payload
+        });
+        eventBus.publish(Event{
+            .name = "mqtt:message",
+            .data = std::pair<std::string,std::string>{topic, payload}
         });
 
         std::cout << "[MQTT] ✓ Event published to bus: mqtt:" << topic << std::endl;

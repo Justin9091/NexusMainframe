@@ -1,162 +1,108 @@
-#include <iostream>
-#include <thread>
-#include <exception>
-
 #include "NexusMainFrame.hpp"
 #include "pathing/PathManager.hpp"
-#include "commands/CommandRegistry.hpp"
-#include "commands/DisableModuleCommand.hpp"
-#include "commands/DownloadCommand.hpp"
-#include "commands/EnableModuleCommand.hpp"
-#include "commands/HelpCommand.hpp"
-#include "commands/ListCommand.hpp"
-#include "commands/MonitorCommand.hpp"
-#include "commands/ScanCommand.hpp"
-#include "Modules/ModuleManager.hpp"
-#include "mqtt/MQTTClient.hpp"
 #include "Event/EventBus.hpp"
+#include "services/ModuleService.hpp"
+#include "services/MqttService.hpp"
+#include "services/HttpService.hpp"
+#include "services/WsService.hpp"
+#include "services/McpService.hpp"
+#include "services/LogService.hpp"
+#include "services/DeviceService.hpp"
+#include "services/RoomService.hpp"
+#include "config/NexusConfig.hpp"
+#include <iostream>
+#include <thread>
 
-void NexusMainFrame::start() {
-    try {
-        auto& paths = PathManager::getInstance();
-        paths.ensureExists("modules.builtin");
-        paths.ensureExists("modules.downloaded");
-        paths.ensureExists("config");
-        paths.ensureExists("cache.downloads");
-        paths.ensureExists("logs");
-        paths.ensureExists("data.scans");
-
-        paths.registerPath("modules.registry", "modules/available-modules.json");
-
-        _moduleManager = std::make_unique<ModuleManager>();
-
-        // Register commands
-        CommandRegistry& registry = CommandRegistry::getInstance();
-        registry.registerCommand("help", std::make_unique<HelpCommand>());
-        registry.registerCommand("list", std::make_unique<ListCommand>(*_moduleManager));
-        registry.registerCommand("enable-module", std::make_unique<EnableModuleCommand>(*_moduleManager));
-        registry.registerCommand("disable-module", std::make_unique<DisableModuleCommand>(*_moduleManager));
-        registry.registerCommand("scan", std::make_unique<ScanCommand>());
-        registry.registerCommand("monitor", std::make_unique<MonitorCommand>());
-        registry.registerCommand("download", std::make_unique<DownloadCommand>());
-
-        // MQTT Client
-        _mqttClient = std::make_unique<MQTTClient>(EventBus::getInstance(), "nexus-core", "192.168.2.161", 1883);
-
-        // Wrap MQTT event subscription
-        EventBus::getInstance().subscribe("mqtt:event", [this](const Event &event) {
-            try {
-                std::any input = event.data;
-                std::string name;
-                std::string data;
-
-                if (input.type() == typeid(std::string)) {
-                    std::string str = std::any_cast<std::string>(input);
-                    auto pos = str.find(' ');
-                    if (pos != std::string::npos) {
-                        name = str.substr(0, pos);
-                        data = str.substr(pos + 1);
-                    } else {
-                        name = str;
-                        data = "";
-                    }
-                }
-
-                Event newEvent;
-                newEvent.name = name;
-                newEvent.data = data;
-                EventBus::getInstance().publish(newEvent);
-            } catch(const std::exception& e) {
-                std::cerr << "[MQTT Event Callback Exception] " << e.what() << "\n";
-            } catch(...) {
-                std::cerr << "[MQTT Event Callback Exception] Unknown exception\n";
-            }
-        });
-
-        _httpServer = std::make_unique<HttpServer>(
-            *_moduleManager,
-            CommandRegistry::getInstance(),
-            EventBus::getInstance(),
-            _scheduler,
-            *_mqttClient
-        );
-        _httpServer->start(8080);
-        _running = true;
-
-    } catch(const std::exception& e) {
-        std::cerr << "[Start Exception] " << e.what() << "\n";
-        throw;
-    } catch(...) {
-        std::cerr << "[Start Exception] Unknown exception\n";
-        throw;
-    }
+void NexusMainFrame::addService(std::unique_ptr<IService> service) {
+    _services.push_back(std::move(service));
 }
 
 void NexusMainFrame::run() {
-    try {
-        start();
+    initPaths();
+    registerBuiltinServices();
+    startAll();
 
-        // Event loop
-        while (_running.load()) {
-            try {
-                EventBus::getInstance().dispatchPending();
-            } catch(const std::exception& e) {
-                std::cerr << "[Run EventBus Exception] " << e.what() << "\n";
-            } catch(...) {
-                std::cerr << "[Run EventBus Exception] Unknown exception\n";
-            }
-
-            try {
-                _scheduler.tick();
-            } catch(const std::exception& e) {
-                std::cerr << "[Run Scheduler Exception] " << e.what() << "\n";
-            } catch(...) {
-                std::cerr << "[Run Scheduler Exception] Unknown exception\n";
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+    _running = true;
+    while (_running.load()) {
+        for (auto& svc : _services) {
+            try { svc->update(); }
+            catch (const std::exception& e) { std::cerr << "[" << svc->getName() << "::update] " << e.what() << "\n"; }
+            catch (...) { std::cerr << "[" << svc->getName() << "::update] unknown exception\n"; }
         }
 
-    } catch(const std::exception& e) {
-        std::cerr << "[Run Exception] " << e.what() << "\n";
-    } catch(...) {
-        std::cerr << "[Run Exception] Unknown exception\n";
+        try { EventBus::getInstance().dispatchPending(); }
+        catch (const std::exception& e) { std::cerr << "[EventBus] " << e.what() << "\n"; }
+
+        try { _scheduler.tick(); }
+        catch (const std::exception& e) { std::cerr << "[Scheduler] " << e.what() << "\n"; }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
     }
 
-    stop();
+    stopAll();
 }
 
 void NexusMainFrame::stop() {
-    try {
-        _running = false;
+    _running = false;
+}
 
-        EventBus::getInstance().shutdown();
+void NexusMainFrame::initPaths() {
+    auto& paths = PathManager::getInstance();
+    paths.ensureExists("modules.builtin");
+    paths.ensureExists("modules.downloaded");
+    paths.ensureExists("config");
+    paths.ensureExists("cache.downloads");
+    paths.ensureExists("logs");
+    paths.ensureExists("data.scans");
+    paths.registerPath("modules.registry", "modules/available-modules.json");
+    paths.registerPath("data.devices",  "data/devices.json");
+    paths.registerPath("data.rooms",    "data/rooms.json");
+    paths.registerPath("config.nexus",  "config/nexus.json");
+}
 
-        if (_mqttClient) {
-            try {
-                _mqttClient->disconnect();
-            } catch(const std::exception& e) {
-                std::cerr << "[MQTT Disconnect Exception] " << e.what() << "\n";
-            } catch(...) {
-                std::cerr << "[MQTT Disconnect Exception] Unknown exception\n";
-            }
-            _mqttClient.reset();
-        }
+void NexusMainFrame::registerBuiltinServices() {
+    _services.push_back(std::make_unique<LogService>());
 
-        if (_moduleManager) {
-            for (auto &m: _moduleManager->getModules()) {
-                try {
-                    m.instance->shutdown();
-                } catch(const std::exception& e) {
-                    std::cerr << "[Module Shutdown Exception] " << e.what() << "\n";
-                } catch(...) {
-                    std::cerr << "[Module Shutdown Exception] Unknown exception\n";
-                }
-            }
-        }
-    } catch(const std::exception& e) {
-        std::cerr << "[Stop Exception] " << e.what() << "\n";
-    } catch(...) {
-        std::cerr << "[Stop Exception] Unknown exception\n";
+    _config = NexusConfig::loadOrCreate(PathManager::getInstance().get("config.nexus"));
+    std::cout << "[NexusMainFrame] Config loaded — MQTT: " << _config.mqtt.host << ":" << _config.mqtt.port
+              << " | HTTP: " << _config.http.port << " | WS: " << _config.ws.port << "\n";
+
+    auto moduleSvc = std::make_unique<ModuleService>();
+    auto mqttSvc   = std::make_unique<MqttService>(_config.mqtt.clientId, _config.mqtt.host, _config.mqtt.port);
+    auto deviceSvc = std::make_unique<DeviceService>();
+    auto roomSvc   = std::make_unique<RoomService>(*deviceSvc);
+
+    ModuleService& moduleRef = *moduleSvc;
+    MqttService&   mqttRef   = *mqttSvc;
+    DeviceService& deviceRef = *deviceSvc;
+    RoomService&   roomRef   = *roomSvc;
+
+    auto httpSvc = std::make_unique<HttpService>(moduleRef, mqttRef, _scheduler, deviceRef, roomRef, _config, _config.http.port);
+    HttpService& httpRef = *httpSvc;
+
+    auto mcpSvc  = std::make_unique<McpService>(httpRef);
+    auto wsSvc   = std::make_unique<WsService>(mqttRef, _config.ws.port);
+
+    _services.push_back(std::move(moduleSvc));
+    _services.push_back(std::move(mqttSvc));
+    _services.push_back(std::move(deviceSvc));
+    _services.push_back(std::move(roomSvc));
+    _services.push_back(std::move(httpSvc));
+    _services.push_back(std::move(mcpSvc));
+    _services.push_back(std::move(wsSvc));
+}
+
+void NexusMainFrame::startAll() {
+    for (auto& svc : _services) {
+        try { svc->start(); }
+        catch (const std::exception& e) { std::cerr << "[" << svc->getName() << "::start] " << e.what() << "\n"; throw; }
+    }
+}
+
+void NexusMainFrame::stopAll() {
+    EventBus::getInstance().shutdown();
+    for (auto it = _services.rbegin(); it != _services.rend(); ++it) {
+        try { (*it)->stop(); }
+        catch (const std::exception& e) { std::cerr << "[" << (*it)->getName() << "::stop] " << e.what() << "\n"; }
     }
 }

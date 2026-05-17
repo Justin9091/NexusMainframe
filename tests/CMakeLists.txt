@@ -1,94 +1,56 @@
-message(STATUS "==================== TESTS SUBDIRECTORY LOADED ====================")
+# tests/CMakeLists.txt
+# Note: Catch2 is already fetched in cmake/Dependencies.cmake.
+#       enable_testing() is called from the root when NEXUS_BUILD_TESTS=ON.
 
-include(FetchContent)
-
-# Fetch Catch2
-find_package(Catch2 3 QUIET)
-if (NOT Catch2_FOUND)
-    message(STATUS "Catch2 not found, fetching from GitHub...")
-    FetchContent_Declare(
-            Catch2
-            GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-            GIT_TAG v3.5.1
-            GIT_SHALLOW TRUE
-    )
-    FetchContent_MakeAvailable(Catch2)
-
-    # Add Catch2 CMake modules to path
-    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
-    message(STATUS "Catch2 fetched successfully")
-endif()
-
-# Include Catch2 integration
-include(Catch)
-
-# Enable testing
-enable_testing()
-
-# Create test executable
 add_executable(nexus_tests
         config/source/JsonConfigSourceTests.cpp
         Event/EventBusTests.cpp
-        command/CommandRegistryTests.cpp
 )
 
-# Force consistent output directory across all generators
+# ── Build into a predictable location for all generators ─────────────────────
 set_target_properties(nexus_tests PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/tests
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/tests
+        RUNTIME_OUTPUT_DIRECTORY                "${CMAKE_BINARY_DIR}/tests"
+        RUNTIME_OUTPUT_DIRECTORY_DEBUG          "${CMAKE_BINARY_DIR}/tests"
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/tests"
 )
 
-# Link libraries
+# ── Reuse the PCH from nexus_core (avoids reparsing nlohmann/spdlog) ─────────
+target_precompile_headers(nexus_tests REUSE_FROM nexus_core)
+
+# ── Link ──────────────────────────────────────────────────────────────────────
 target_link_libraries(nexus_tests PRIVATE
-        coverage_config
         nexus_core
         Catch2::Catch2WithMain
 )
 
-# Copy nexus_core shared library to test directory
-if(WIN32)
-    # Copy to consistent location for all configurations
+# Coverage is opt-in via nexus_set_compile_options — no separate target needed.
+if(NEXUS_ENABLE_COV)
+    nexus_set_compile_options(nexus_tests)
+endif()
+
+# ── Make the nexus_core shared library findable at test-run time ──────────────
+if(WIN32 OR APPLE)
+    # Copy the .dll / .dylib next to the test binary after every build.
     add_custom_command(TARGET nexus_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:nexus_core>
-            ${CMAKE_BINARY_DIR}/tests
-            COMMENT "Copying nexus_core.dll to test directory"
-    )
-elseif(APPLE)
-    add_custom_command(TARGET nexus_tests POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:nexus_core>
-            ${CMAKE_BINARY_DIR}/tests
-            COMMENT "Copying nexus_core.dylib to test directory"
+            $<TARGET_FILE_DIR:nexus_tests>
+            COMMENT "Copying nexus_core shared library to test output directory"
     )
 else()
-    # Linux - set RPATH to find shared library
+    # Linux: embed an RPATH so the dynamic linker finds the library without copying.
     set_target_properties(nexus_tests PROPERTIES
-            BUILD_RPATH ${CMAKE_BINARY_DIR}/lib:${CMAKE_BINARY_DIR}
-            INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib
+            BUILD_RPATH   "${CMAKE_BINARY_DIR}"
+            INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib"
     )
 endif()
 
-# Discover tests - this runs AFTER the executable is built
+# ── Test discovery ────────────────────────────────────────────────────────────
+# PRE_TEST: Catch2 enumerates test cases at ctest-run time, not configure time.
+# This means adding a new TEST_CASE doesn't require a full re-configure.
 catch_discover_tests(nexus_tests
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        PROPERTIES
-        LABELS "unit"
-        DISCOVERY_MODE PRE_TEST  # Critical: discover tests at test-time, not configure-time
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/tests"
+        TEST_PREFIX       "nexus::"
+        PROPERTIES        LABELS "unit" TIMEOUT 60
+        DISCOVERY_MODE    PRE_TEST
 )
-
-# Also add a manual test as fallback
-add_test(
-        NAME AllTests
-        COMMAND nexus_tests
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-)
-
-set_tests_properties(AllTests PROPERTIES
-        TIMEOUT 300
-        LABELS "unit;catch2;fallback"
-)
-
-message(STATUS "Test executable target: nexus_tests")
-message(STATUS "Test executable location: $<TARGET_FILE:nexus_tests>")

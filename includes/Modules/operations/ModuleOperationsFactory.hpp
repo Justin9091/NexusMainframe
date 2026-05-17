@@ -10,7 +10,7 @@
 
 class ModuleOperationsFactory {
 public:
-    static std::unique_ptr<IModuleOperations> create();
+    static std::shared_ptr<IModuleOperations> create();
 };
 
 #endif //NEXUSCORE_MODULEOPERATIONSFACTORY_HPP

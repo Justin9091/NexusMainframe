@@ -9,22 +9,24 @@
 #include <vector>
 
 #include "Modules/ModuleManager.hpp"
-#include "commands/CommandRegistry.hpp"
 #include "Event/EventBus.hpp"
 #include "Scheduler/Scheduler.hpp"
 #include "mqtt/MQTTClient.hpp"
 #include "Endpoint.hpp"
+#include "http/IController.hpp"
 
 class HttpServer {
 public:
     HttpServer(ModuleManager& modules,
-               CommandRegistry& commands,
                EventBus& eventBus,
                Scheduler& scheduler,
                MQTTClient& mqtt);
 
     void start(int port = 8080);
     void stop();
+
+    void use(IController& controller);
+    void addRoute(Endpoint ep);
 
 private:
     void registerRoutes();
@@ -33,8 +35,11 @@ private:
     std::string toJson(bool success, const std::string& output);
     long long   uptimeSeconds() const;
 
+public:
+    [[nodiscard]] const std::vector<Endpoint>& getRoutes() const noexcept { return _routes; }
+
+private:
     ModuleManager&   _modules;
-    CommandRegistry& _commands;
     EventBus&        _eventBus;
     Scheduler&       _scheduler;
     MQTTClient&      _mqtt;

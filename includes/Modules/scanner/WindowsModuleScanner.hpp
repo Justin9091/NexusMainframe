@@ -40,7 +40,7 @@ public:
     }
 
 private:
-    std::unique_ptr<IModuleOperations> osOps_;
+    std::shared_ptr<IModuleOperations> osOps_;
 
     // =========================
     // Helpers

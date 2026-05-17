@@ -1,1 +1,29 @@
-cmake-build-debug
+# Build directories
+cmake-build-debug/
+cmake-build-release/
+build/
+
+# IDE
+.idea/
+*.user
+
+# Claude Code
+.claude/
+
+# Binaries & archives
+*.zip
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Generated docs
+docs/html/
+docs/xml/
+
+# Go build output
+cli/*.exe
+
+# OS
+Thumbs.db
+.DS_Store

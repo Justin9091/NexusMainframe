@@ -1,18 +1,25 @@
-//
-// Created by jusra on 5-1-2026.
-//
+#pragma once
+#include <string>
 
-#ifndef NEXUSCORE_RESULT_HPP
-#define NEXUSCORE_RESULT_HPP
+class Result {
+public:
+    static Result ok        (std::string message = "OK");
+    static Result created   (std::string message = "Created");
+    static Result badRequest(std::string message = "Bad request");
+    static Result notFound  (std::string message = "Not found");
+    static Result conflict  (std::string message = "Conflict");
+    static Result forbidden (std::string message = "Forbidden");
+    static Result failed    (std::string message = "Internal server error");
 
-enum class Result {
-    SUCCESS,
-    FAILURE,
-    TIMEOUT,
-    NOT_FOUND,
-    INVALID_ARGUMENT,
-    PERMISSION_DENIED,
-    UNKNOWN_ERROR
+    bool               isOk()       const;
+    int                httpStatus() const;
+    const std::string& message()    const;
+    std::string        toJson()     const;
+
+protected:
+    Result(int httpStatus, std::string message);
+
+private:
+    int         _httpStatus;
+    std::string _message;
 };
-
-#endif //NEXUSCORE_RESULT_HPP

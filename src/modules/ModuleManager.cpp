@@ -1,17 +1,17 @@
-//
-// Created by jusra on 15-1-2026.
-//
-
 #include "Modules/ModuleManager.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 
 #include "Modules/operations/ModuleOperationsFactory.hpp"
+#include "pathing/PathManager.hpp"
 
 ModuleManager::ModuleManager()
     : loader_(ModuleOperationsFactory::create()),
-      unloader_(ModuleOperationsFactory::create()) {}
+      stateStore_(PathManager::getInstance().get("config") / "modules.state.json") {
+    stateStore_.load();
+}
 
 void ModuleManager::loadFromDirectory(const std::string& path) {
     namespace fs = std::filesystem;
@@ -19,60 +19,78 @@ void ModuleManager::loadFromDirectory(const std::string& path) {
     for (const auto& entry : fs::directory_iterator(path)) {
         if (!entry.is_regular_file()) continue;
 
-        auto loaded = loader_.load(entry.path().string());
-        if (!loaded) continue;
+        const std::string name = entry.path().stem().string();
+        if (isLoaded(name)) continue;
 
-        loaded_.push_back(*loaded);
-        EventBus::getInstance().publish({"event:enable", loaded->name});
+        auto mod = loader_.load(name);
+        if (!mod) continue;
+
+        (*mod)->initialize(EventBus::getInstance());
+        EventBus::getInstance().publish({"event:enable", mod->getName()});
+
+        stateStore_.add(name);
+        loaded_.push_back(std::move(*mod));
     }
+
+    stateStore_.save();
+}
+
+void ModuleManager::loadFromState() {
+    for (const auto& name : stateStore_.getAll()) {
+        if (isLoaded(name)) continue;
+
+        auto mod = loader_.load(name);
+        if (!mod) {
+            std::cout << "[ModuleManager] Failed to restore module: " << name << "\n";
+            continue;
+        }
+
+        (*mod)->initialize(EventBus::getInstance());
+        EventBus::getInstance().publish({"event:enable", mod->getName()});
+        loaded_.push_back(std::move(*mod));
+    }
+}
+
+bool ModuleManager::load(const std::string& name) {
+    if (isLoaded(name)) return false;
+
+    auto mod = loader_.load(name);
+    if (!mod) {
+        std::cout << "[ModuleManager] Failed to load module: " << name << "\n";
+        return false;
+    }
+
+    (*mod)->initialize(EventBus::getInstance());
+    EventBus::getInstance().publish({"event:enable", mod->getName()});
+
+    stateStore_.add(name);
+    stateStore_.save();
+
+    loaded_.push_back(std::move(*mod));
+    return true;
 }
 
 bool ModuleManager::unload(const std::string& name) {
     auto it = std::find_if(loaded_.begin(), loaded_.end(),
-        [&](const LoadedModule& m) { return m.name == name; });
+        [&](const Module& m) { return m.getName() == name; });
 
     if (it == loaded_.end()) return false;
 
-    LoadedModule modCopy = *it;
+    EventBus::getInstance().publish({"event:disable", it->getName()});
+    (*it)->shutdown();       // shutdown before destructor drops the instance
+    loaded_.erase(it);       // ~Module(): instance freed, then handle freed
 
-    EventBus::getInstance().publish({"event:disable", modCopy.name});
-    // if (modCopy.handle) {
-    //     unloader_.unload(modCopy);
-    //     modCopy.handle = nullptr;
-    // }
-
-    loaded_.erase(it);
+    stateStore_.remove(name);
+    stateStore_.save();
 
     return true;
 }
 
-
-bool ModuleManager::isLoaded(const std::string &name) const {
-    for (const LoadedModule & loaded : loaded_) {
-        if (loaded.name == name) return true;
-    }
-
-    return false;
+bool ModuleManager::isLoaded(const std::string& name) const {
+    return std::any_of(loaded_.begin(), loaded_.end(),
+        [&](const Module& m) { return m.getName() == name; });
 }
 
-const std::vector<LoadedModule>& ModuleManager::getModules() const {
+const std::vector<Module>& ModuleManager::getModules() const {
     return loaded_;
-}
-
-bool ModuleManager::load(const std::string &path) {
-    if (isLoaded(path)) {
-        return false;
-    }
-
-    std::optional<LoadedModule> loaded = loader_.load(path);
-    if (!loaded.has_value()) {
-        std::cout << "Failed to load\n\r";
-        return false;
-    }
-
-    loaded.value().instance->initialize(EventBus::getInstance());
-
-    loaded_.push_back(*loaded);
-
-    return true;
 }
