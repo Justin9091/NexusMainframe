@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "Rooms/Room.hpp"
+#include "rooms/Room.hpp"
 
 /**
  * @brief Thread-safe in-memory registry for Room objects with JSON persistence.
