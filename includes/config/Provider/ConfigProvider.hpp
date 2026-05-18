@@ -138,6 +138,11 @@ public:
 
         out << j.dump(4);
     }
+
+private:
+    std::unique_ptr<IConfigSource> source_;
+    ConfigMap config_;
+    std::unordered_map<std::type_index, std::shared_ptr<void>> adapters_;
 };
 
 #endif //NEXUSCORE_CONFIGPROVIDER_HPP
