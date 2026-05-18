@@ -2,8 +2,8 @@
 #include <memory>
 #include <optional>
 #include "IService.hpp"
-#include "Devices/Device.hpp"
-#include "Devices/DeviceRegistry.hpp"
+#include "devices/Device.hpp"
+#include "devices/DeviceRegistry.hpp"
 #include "Result/Result.hpp"
 #include <nlohmann/json.hpp>
 

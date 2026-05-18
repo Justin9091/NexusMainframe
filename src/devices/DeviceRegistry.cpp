@@ -1,4 +1,4 @@
-#include "Devices/DeviceRegistry.hpp"
+#include "devices/DeviceRegistry.hpp"
 #include <fstream>
 #include <nlohmann/json.hpp>
 

@@ -1,4 +1,4 @@
-#include "Devices/Device.hpp"
+#include "devices/Device.hpp"
 
 nlohmann::json Device::toJson() const {
     return {

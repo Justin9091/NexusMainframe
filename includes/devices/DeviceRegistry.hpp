@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "Devices/Device.hpp"
+#include "devices/Device.hpp"
 
 /**
  * @brief Thread-safe store for Device objects, backed by a JSON file on disk.
