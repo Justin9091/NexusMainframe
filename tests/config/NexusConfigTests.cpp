@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
+#include <fstream>
 #include "config/NexusConfig.hpp"
 
 TEST_CASE("NexusConfig has correct defaults", "[nexusconfig]") {
