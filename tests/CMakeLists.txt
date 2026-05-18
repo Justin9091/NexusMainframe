@@ -5,6 +5,9 @@
 add_executable(nexus_tests
         config/source/JsonConfigSourceTests.cpp
         Event/EventBusTests.cpp
+        Result/ResultTests.cpp
+        devices/DeviceTests.cpp
+        devices/DeviceRegistryTests.cpp
 )
 
 # ── Build next to nexus_core so all DLLs are in the same directory ────────────
