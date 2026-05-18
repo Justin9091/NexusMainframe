@@ -45,20 +45,24 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             coverage: true
+            compiler_launcher: ""   # ccache conflicts with gcov .gcda generation
           - os: ubuntu-latest
             compiler: clang
             c_compiler: clang
             cpp_compiler: clang++
+            compiler_launcher: ccache
           - os: windows-latest
             compiler: msvc
             c_compiler: cl
             cpp_compiler: cl
             coverage: false
+            compiler_launcher: sccache
           - os: macos-latest
             compiler: clang
             c_compiler: clang
             cpp_compiler: clang++
             coverage: false
+            compiler_launcher: ccache
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +83,7 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup ccache
+        if: matrix.compiler_launcher != ''
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.os }}-${{ matrix.compiler }}
@@ -100,15 +105,14 @@ jobs:
           -DBUILD_TESTING=ON
           -DNEXUS_ENABLE_COV=${{ matrix.coverage && 'ON' || 'OFF' }}
           -DNEXUS_FAST_BUILD=${{ matrix.coverage && 'OFF' || 'ON' }}
-          -DCMAKE_CXX_COMPILER_LAUNCHER=${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
-          -DCMAKE_C_COMPILER_LAUNCHER=${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
+          ${{ matrix.compiler_launcher != '' && format('-DCMAKE_CXX_COMPILER_LAUNCHER={0} -DCMAKE_C_COMPILER_LAUNCHER={0}', matrix.compiler_launcher) || '' }}
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config ${{ matrix.coverage && 'Debug' || 'Release' }} --parallel
 
       - name: Run tests
         working-directory: build
-        run: ctest --output-on-failure -C Release --parallel 4
+        run: ctest --output-on-failure -C ${{ matrix.coverage && 'Debug' || 'Release' }} --parallel 4
 
       - name: Generate coverage
         if: matrix.coverage
