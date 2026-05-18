@@ -102,7 +102,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.coverage && 'Debug' || 'Release' }}
-          -DBUILD_TESTING=ON
+          -DNEXUS_BUILD_TESTS=ON
           -DNEXUS_ENABLE_COV=${{ matrix.coverage && 'ON' || 'OFF' }}
           -DNEXUS_FAST_BUILD=${{ matrix.coverage && 'OFF' || 'ON' }}
           ${{ matrix.compiler_launcher != '' && format('-DCMAKE_CXX_COMPILER_LAUNCHER={0} -DCMAKE_C_COMPILER_LAUNCHER={0}', matrix.compiler_launcher) || '' }}
