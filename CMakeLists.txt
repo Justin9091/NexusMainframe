@@ -88,10 +88,10 @@ target_sources(nexus_core PRIVATE
         src/services/MqttService.cpp
         src/services/HttpService.cpp
 
-        src/pathing/PathResolver.cpp
-        src/pathing/resolver/UnixPathResolver.cpp
-        src/pathing/resolver/WindowsPathResolver.cpp
-        src/pathing/resolver/PathResolverFactory.cpp
+        src/paths/PathResolver.cpp
+        src/paths/resolver/UnixPathResolver.cpp
+        src/paths/resolver/WindowsPathResolver.cpp
+        src/paths/resolver/PathResolverFactory.cpp
 
         src/mainframe/service/WindowsServiceHost.cpp
         src/mainframe/service/ServiceHostFactory.cpp
@@ -215,7 +215,7 @@ target_link_libraries(NexusMainFrame PRIVATE nexus_core)
 if(WIN32)
     target_link_libraries(NexusMainFrame PRIVATE ws2_32 wsock32)
 
-    # 🔥 FORCE CONSOLE SUBSYSTEM (fix WinMain error)
+    # FORCE CONSOLE SUBSYSTEM (fix WinMain entry-point error on MinGW)
     target_link_options(NexusMainFrame PRIVATE -mconsole)
 endif()
 

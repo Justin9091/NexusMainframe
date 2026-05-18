@@ -3,7 +3,7 @@
 //
 
 #include "mainframe/service/ServiceHostFactory.hpp"
-#include "mainframe/service/ForegroundServiceHost.hpp"  // ← Verplaats BUITEN #ifdef
+#include "mainframe/service/ForegroundServiceHost.hpp"
 
 #ifdef _WIN32
 #include "mainframe/service/WindowsServiceHost.hpp"
