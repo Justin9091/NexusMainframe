@@ -96,9 +96,10 @@ jobs:
           cmake -B build -G Ninja
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_BUILD_TYPE=${{ matrix.coverage && 'Debug' || 'Release' }}
           -DBUILD_TESTING=ON
-          -DENABLE_COVERAGE=${{ matrix.coverage && 'ON' || 'OFF' }}
+          -DNEXUS_ENABLE_COV=${{ matrix.coverage && 'ON' || 'OFF' }}
+          -DNEXUS_FAST_BUILD=${{ matrix.coverage && 'OFF' || 'ON' }}
           -DCMAKE_CXX_COMPILER_LAUNCHER=${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
           -DCMAKE_C_COMPILER_LAUNCHER=${{ runner.os == 'Windows' && 'sccache' || 'ccache' }}
 
