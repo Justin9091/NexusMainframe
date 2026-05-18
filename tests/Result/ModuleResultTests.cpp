@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
 #include "Result/ModuleResult.hpp"
 
 TEST_CASE("ModuleResult::alreadyLoaded returns 409 with module name", "[moduleresult]") {
