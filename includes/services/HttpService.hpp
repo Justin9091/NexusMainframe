@@ -24,11 +24,11 @@ class HttpService : public IService {
 public:
     /**
      * @param moduleSvc  Module management service.
-     * @param mqttSvc    MQTT service (used by legacy health endpoint).
+     * @param mqttSvc    MQTT service (used by health endpoint).
      * @param scheduler  Scheduler reference.
-     * @param deviceSvc  Device service.
-     * @param roomSvc    Room service.
-     * @param config     Application configuration (provides HTTP port override).
+     * @param deviceSvc  Device service (forwarded to DeviceController).
+     * @param roomSvc    Room service (forwarded to RoomController).
+     * @param config     Application configuration (forwarded to ConfigController).
      * @param port       TCP port to listen on (default 8080).
      */
     HttpService(ModuleService& moduleSvc, MqttService& mqttSvc, Scheduler& scheduler,
@@ -53,9 +53,6 @@ private:
     ModuleService& _moduleSvc;
     MqttService&   _mqttSvc;
     Scheduler&     _scheduler;
-    DeviceService& _deviceSvc;
-    RoomService&   _roomSvc;
-    NexusConfig&   _config;
     int            _port;
     ModuleController _moduleCtrl;   // declared before _server: outlives it
     DeviceController _deviceCtrl;
