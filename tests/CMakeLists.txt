@@ -14,9 +14,6 @@ set_target_properties(nexus_tests PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY_RELEASE        "${CMAKE_BINARY_DIR}/tests"
 )
 
-# ── Reuse the PCH from nexus_core (avoids reparsing nlohmann/spdlog) ─────────
-target_precompile_headers(nexus_tests REUSE_FROM nexus_core)
-
 # ── Link ──────────────────────────────────────────────────────────────────────
 target_link_libraries(nexus_tests PRIVATE
         nexus_core

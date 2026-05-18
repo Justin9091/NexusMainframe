@@ -158,7 +158,7 @@ set_target_properties(nexus_core PROPERTIES
 # ─────────────────────────────────────────────
 # PCH
 # ─────────────────────────────────────────────
-target_precompile_headers(nexus_core PUBLIC
+target_precompile_headers(nexus_core PRIVATE
         <nlohmann/json.hpp>
         <spdlog/spdlog.h>
         <httplib.h>
