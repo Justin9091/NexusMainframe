@@ -1,4 +1,4 @@
-#include "Rooms/Room.hpp"
+#include "rooms/Room.hpp"
 
 nlohmann::json Room::toJson() const {
     return {

@@ -2,8 +2,8 @@
 #include <memory>
 #include <optional>
 #include "IService.hpp"
-#include "Rooms/Room.hpp"
-#include "Rooms/RoomRegistry.hpp"
+#include "rooms/Room.hpp"
+#include "rooms/RoomRegistry.hpp"
 #include "services/DeviceService.hpp"
 #include "Result/Result.hpp"
 #include <nlohmann/json.hpp>
