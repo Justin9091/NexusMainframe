@@ -42,7 +42,7 @@ TEST_CASE("JsonConfigSource loads float values", "[jsonconfigsource]") {
     JsonConfigSource src;
     auto map = src.load(path.string());
 
-    REQUIRE(std::get<double>(map.at("ratio")) == Catch::Approx(0.75));
+    REQUIRE(std::get<double>(map.at("ratio")) == 0.75);
 
     std::filesystem::remove(path);
 }
