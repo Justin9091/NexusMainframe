@@ -1,47 +1,64 @@
 <div align="center">
   <img src="resources/logo.png" alt="Logo" title="Logo" width="300">
 
-
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Justin9091/NexusMainframe/cmake-multi-platform.yml?branch=main&style=for-the-badge&logo=github)](https://github.com/Justin9091/NexusMainframe/actions)
 [![License](https://img.shields.io/github/license/Justin9091/NexusMainframe?style=for-the-badge)](LICENSE)
 [![C++](https://img.shields.io/badge/C++-20-blue?style=for-the-badge&logo=cplusplus)](https://isocpp.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.20+-064F8C?style=for-the-badge&logo=cmake)](https://cmake.org/)
-[![Coverage](https://coveralls.io/repos/github/USERNAME/REPO/badge.svg?branch=main)](https://coveralls.io/github/USERNAME/REPO?branch=main)
+[![Coverage](https://coveralls.io/repos/github/Justin9091/NexusMainframe/badge.svg?branch=main)](https://coveralls.io/github/Justin9091/NexusMainframe?branch=main)
+
 </div>
 
-# 🚀 Nexus Mainframe
+# Nexus Mainframe
 
-Nexus Mainframe is a modern C++20 framework designed for building modular, event-driven applications. With its plugin-based architecture, advanced scheduling system, and flexible configuration management, Nexus provides everything you need to create scalable and maintainable software.
+Nexus Mainframe is a modular C++20 framework for building event-driven applications on Windows and Linux. It provides a plugin-based architecture, REST/WebSocket API, MQTT integration, cron scheduling, and flexible configuration management.
 
-## ✨ Key Features
-- 🧩 Modular Architecture - Dynamic plugin system for hot-loading modules
-- ⚡ Event-Driven Design - Powerful EventBus for decoupled communication
-- ⏰ Advanced Scheduling - Cron-based task scheduling
-- 🔧 Configuration Management - Flexible multi-source configuration
-- 📝 Comprehensive Logging - Built-in logging with spdlog
-- 🎯 Task System - Flexible task execution framework
+## Features
 
+- **Modular plugin system** — dynamically load/unload `.dll`/`.so` modules at runtime
+- **REST API** — HTTP server on port 8080 with device, room, module, and config endpoints
+- **WebSocket server** — real-time event streaming
+- **MQTT client** — configurable broker connection
+- **Cron scheduler** — cron expression-based task scheduling via croncpp
+- **EventBus** — decoupled publish/subscribe communication between components
+- **IPC** — TCP command server on port 9999
+- **MCP server** — Model Context Protocol support
 
-## 📦 Quick Start
-Prerequisites:
-- C++20 compatible compiler
-- CMake 3.20+
-- Git
+## Build
 
-## Build & Run
+**Requirements:** C++20 compiler, CMake 3.20+, Ninja, OpenSSL (Linux/macOS)
+
 ```bash
-git clone https://github.com/Justin9091/NexusMainframe.git
-cd NexusMainframe
-mkdir build && cd build
-cmake ..
-cmake --build . --config Release
-./NexusMainFrame
+# Debug
+cmake -B build -G Ninja
+cmake --build build
+
+# Release
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+
+# With tests
+cmake -B build -G Ninja -DNEXUS_BUILD_TESTS=ON
+cmake --build build
+ctest --test-dir build
 ```
 
-## 📚 Documentation
-For detailed documentation, tutorials, and examples, visit the Wiki.
+## HTTP API
 
-TODO
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/status` | Health check |
+| GET | `/api/health` | Uptime, MQTT status, loaded modules |
+| GET | `/api/metrics` | Memory and runtime metrics |
+| GET | `/api/modules` | List loaded modules |
+| POST | `/api/modules/:name/enable` | Load a module |
+| POST | `/api/modules/:name/disable` | Unload a module |
+| GET | `/api/devices` | List devices |
+| POST | `/api/devices` | Add a device |
+| DELETE | `/api/devices/:id` | Remove a device |
+| GET | `/api/rooms` | List rooms |
+| GET/PATCH | `/api/config` | Read or update configuration |
 
-## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
