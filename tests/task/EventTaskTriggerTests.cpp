@@ -19,7 +19,7 @@ struct ThrowingTask : ITask {
 TEST_CASE("EventTask delegeert execute naar inner task", "[eventtask]") {
     auto& bus = EventBus::getInstance();
     CountingTask inner;
-    EventTask wrapped(inner, "task.done");
+    EventTask wrapped(inner, bus, "et.delegate");
 
     wrapped.execute();
 
@@ -29,32 +29,35 @@ TEST_CASE("EventTask delegeert execute naar inner task", "[eventtask]") {
 TEST_CASE("EventTask publiceert completion event na succesvolle execute", "[eventtask]") {
     auto& bus = EventBus::getInstance();
     bool received = false;
-    bus.subscribe("task.completed", [&](const Event&) { received = true; });
+    int id = bus.subscribe("et.completed", [&](const Event&) { received = true; });
 
     CountingTask inner;
-    EventTask wrapped(inner, "task.completed");
+    EventTask wrapped(inner, bus, "et.completed");
     wrapped.execute();
     bus.dispatchPending();
 
+    bus.unsubscribe("et.completed", id);
     REQUIRE(received);
 }
 
 TEST_CASE("EventTask publiceert geen event als inner task een exception gooit", "[eventtask]") {
     auto& bus = EventBus::getInstance();
     bool received = false;
-    bus.subscribe("task.threw", [&](const Event&) { received = true; });
+    int id = bus.subscribe("et.threw", [&](const Event&) { received = true; });
 
     ThrowingTask inner;
-    EventTask wrapped(inner, "task.threw");
+    EventTask wrapped(inner, bus, "et.threw");
     REQUIRE_NOTHROW(wrapped.execute());
     bus.dispatchPending();
 
+    bus.unsubscribe("et.threw", id);
     REQUIRE_FALSE(received);
 }
 
 TEST_CASE("EventTask laat exception niet propageren", "[eventtask]") {
+    auto& bus = EventBus::getInstance();
     ThrowingTask inner;
-    EventTask wrapped(inner, "task.nopropagate");
+    EventTask wrapped(inner, bus, "et.nopropagate");
     REQUIRE_NOTHROW(wrapped.execute());
 }
 
@@ -63,9 +66,9 @@ TEST_CASE("EventTask laat exception niet propageren", "[eventtask]") {
 TEST_CASE("EventTrigger voert task uit wanneer event dispatched wordt", "[eventtrigger]") {
     auto& bus = EventBus::getInstance();
     CountingTask task;
-    EventTrigger trigger(bus, "trigger.fire", task);
+    EventTrigger trigger(bus, "tr.fire", task);
 
-    bus.publish({"trigger.fire", {}});
+    bus.publish({"tr.fire", {}});
     bus.dispatchPending();
 
     REQUIRE(task.count == 1);
@@ -74,9 +77,9 @@ TEST_CASE("EventTrigger voert task uit wanneer event dispatched wordt", "[eventt
 TEST_CASE("EventTrigger voert task niet uit bij een ander event", "[eventtrigger]") {
     auto& bus = EventBus::getInstance();
     CountingTask task;
-    EventTrigger trigger(bus, "trigger.correct", task);
+    EventTrigger trigger(bus, "tr.correct", task);
 
-    bus.publish({"trigger.other", {}});
+    bus.publish({"tr.other", {}});
     bus.dispatchPending();
 
     REQUIRE(task.count == 0);
@@ -87,13 +90,13 @@ TEST_CASE("EventTrigger unsubscribet automatisch bij destructie", "[eventtrigger
     CountingTask task;
 
     {
-        EventTrigger trigger(bus, "trigger.raii", task);
-        bus.publish({"trigger.raii", {}});
+        EventTrigger trigger(bus, "tr.raii", task);
+        bus.publish({"tr.raii", {}});
         bus.dispatchPending();
         REQUIRE(task.count == 1);
     }
 
-    bus.publish({"trigger.raii", {}});
+    bus.publish({"tr.raii", {}});
     bus.dispatchPending();
     REQUIRE(task.count == 1);
 }
@@ -101,10 +104,10 @@ TEST_CASE("EventTrigger unsubscribet automatisch bij destructie", "[eventtrigger
 TEST_CASE("Meerdere EventTriggers op hetzelfde event triggeren elk hun eigen task", "[eventtrigger]") {
     auto& bus = EventBus::getInstance();
     CountingTask taskA, taskB;
-    EventTrigger triggerA(bus, "trigger.multi", taskA);
-    EventTrigger triggerB(bus, "trigger.multi", taskB);
+    EventTrigger triggerA(bus, "tr.multi", taskA);
+    EventTrigger triggerB(bus, "tr.multi", taskB);
 
-    bus.publish({"trigger.multi", {}});
+    bus.publish({"tr.multi", {}});
     bus.dispatchPending();
 
     REQUIRE(taskA.count == 1);
@@ -115,11 +118,54 @@ TEST_CASE("Moved-from EventTrigger unsubscribet niet bij destructie", "[eventtri
     auto& bus = EventBus::getInstance();
     CountingTask task;
 
-    EventTrigger original(bus, "trigger.move", task);
+    EventTrigger original(bus, "tr.movector", task);
     EventTrigger moved(std::move(original));
 
-    bus.publish({"trigger.move", {}});
+    bus.publish({"tr.movector", {}});
     bus.dispatchPending();
 
     REQUIRE(task.count == 1);
+}
+
+TEST_CASE("EventTrigger move assignment behoudt subscription", "[eventtrigger]") {
+    auto& bus = EventBus::getInstance();
+    CountingTask task;
+
+    EventTrigger a(bus, "tr.moveassign", task);
+    EventTrigger b = std::move(a);
+
+    bus.publish({"tr.moveassign", {}});
+    bus.dispatchPending();
+
+    REQUIRE(task.count == 1);
+}
+
+TEST_CASE("EventTrigger move assignment verwijdert oude subscription", "[eventtrigger]") {
+    auto& bus = EventBus::getInstance();
+    CountingTask taskA, taskB;
+
+    EventTrigger a(bus, "tr.moveassign.old", taskA);
+    EventTrigger b(bus, "tr.moveassign.new", taskB);
+    b = std::move(a);
+
+    // b's oude subscription (tr.moveassign.new) moet verwijderd zijn
+    bus.publish({"tr.moveassign.new", {}});
+    bus.dispatchPending();
+    REQUIRE(taskB.count == 0);
+
+    // b's nieuwe subscription (tr.moveassign.old, overgenomen van a) moet actief zijn
+    bus.publish({"tr.moveassign.old", {}});
+    bus.dispatchPending();
+    REQUIRE(taskA.count == 1);
+}
+
+TEST_CASE("EventTrigger callback exception propageert niet buiten dispatchPending", "[eventtrigger]") {
+    auto& bus = EventBus::getInstance();
+    ThrowingTask task;
+    EventTrigger trigger(bus, "tr.throw", task);
+
+    bus.publish({"tr.throw", {}});
+    // EventBus vangt of propageert exceptions via dispatchPending — gedrag vastleggen
+    // zodat regressies zichtbaar zijn als EventBus-gedrag wijzigt
+    REQUIRE_NOTHROW(bus.dispatchPending());
 }

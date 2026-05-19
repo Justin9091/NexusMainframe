@@ -3,17 +3,16 @@
 //
 
 #include "task/EventTask.hpp"
-#include "event/EventBus.hpp"
 #include "logging/WebLogger.hpp"
 
-EventTask::EventTask(ITask& task, std::string completionEvent)
-    : _task(task), _completionEvent(std::move(completionEvent))
+EventTask::EventTask(ITask& task, EventBus& bus, std::string completionEvent)
+    : _task(task), _bus(bus), _completionEvent(std::move(completionEvent))
 {}
 
 void EventTask::execute() {
     try {
         _task.execute();
-        EventBus::getInstance().publish({_completionEvent, {}});
+        _bus.publish({_completionEvent, {}});
     } catch (const std::exception& e) {
         WebLogger("EventTask").error("Task execution failed: " + std::string{e.what()});
     } catch (...) {

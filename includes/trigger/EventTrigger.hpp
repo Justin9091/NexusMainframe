@@ -9,11 +9,6 @@
 #include "task/ITask.hpp"
 
 class EventTrigger {
-private:
-    EventBus* _bus;
-    std::string _eventName;
-    int _eventId;
-
 public:
     EventTrigger(EventBus& bus, std::string eventName, ITask& task);
     ~EventTrigger();
@@ -23,6 +18,12 @@ public:
 
     EventTrigger(const EventTrigger&)            = delete;
     EventTrigger& operator=(const EventTrigger&) = delete;
+
+private:
+    EventBus*   _bus;
+    ITask*      _task;
+    std::string _eventName;
+    int         _eventId = -1;
 };
 
 #endif //NEXUSCORE_EVENTTRIGGER_HPP
