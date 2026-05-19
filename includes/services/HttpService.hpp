@@ -2,7 +2,7 @@
 #include <memory>
 #include "IService.hpp"
 #include "server/HttpServer.hpp"
-#include "Scheduler/Scheduler.hpp"
+#include "scheduler/Scheduler.hpp"
 #include "services/ModuleService.hpp"
 #include "services/MqttService.hpp"
 #include "http/controllers/ModuleController.hpp"

@@ -10,8 +10,8 @@
 #include <any>
 #include <atomic>
 
-#include "Logger/Logger.hpp"
-#include "Result/Result.hpp"
+#include "logging/Logger.hpp"
+#include "result/Result.hpp"
 
 /**
  * @brief Payload carried by every event on the EventBus.

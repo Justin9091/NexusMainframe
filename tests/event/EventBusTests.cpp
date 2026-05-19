@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "Event/EventBus.hpp"
+#include "event/EventBus.hpp"
 
 TEST_CASE("EventBus is a singleton", "[eventbus]") {
     EventBus& a = EventBus::getInstance();

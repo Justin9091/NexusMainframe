@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <filesystem>
 #include <fstream>
-#include "config/Source/JsonConfigSource.hpp"
+#include "config/source/JsonConfigSource.hpp"
 
 namespace {
 std::filesystem::path writeTempJson(const std::string& content) {

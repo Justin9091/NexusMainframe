@@ -7,8 +7,8 @@
 
 #include <string>
 
-#include "Event/EventBus.hpp"
-#include "Logger/Logger.hpp"
+#include "event/EventBus.hpp"
+#include "logging/Logger.hpp"
 
 /**
  * @brief Base interface for all NexusMainFrame modules.

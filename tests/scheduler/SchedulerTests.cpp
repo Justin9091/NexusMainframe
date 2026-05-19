@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "Scheduler/Scheduler.hpp"
+#include "scheduler/Scheduler.hpp"
 
 namespace {
 struct CountingTask : ITask {

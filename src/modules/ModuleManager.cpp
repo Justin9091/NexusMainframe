@@ -1,11 +1,11 @@
-#include "Modules/ModuleManager.hpp"
+#include "modules/ModuleManager.hpp"
 
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
 
-#include "Modules/operations/ModuleOperationsFactory.hpp"
-#include "pathing/PathManager.hpp"
+#include "modules/operations/ModuleOperationsFactory.hpp"
+#include "paths/PathManager.hpp"
 
 ModuleManager::ModuleManager()
     : loader_(ModuleOperationsFactory::create()),

@@ -1,5 +1,5 @@
 #include "services/ModuleService.hpp"
-#include "Result/ModuleResult.hpp"
+#include "result/ModuleResult.hpp"
 
 void ModuleService::start() {
     _manager = std::make_unique<ModuleManager>();

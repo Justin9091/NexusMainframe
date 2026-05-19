@@ -8,9 +8,9 @@
 #include <chrono>
 #include <vector>
 
-#include "Modules/ModuleManager.hpp"
-#include "Event/EventBus.hpp"
-#include "Scheduler/Scheduler.hpp"
+#include "modules/ModuleManager.hpp"
+#include "event/EventBus.hpp"
+#include "scheduler/Scheduler.hpp"
 #include "mqtt/MQTTClient.hpp"
 #include "Endpoint.hpp"
 #include "http/IController.hpp"

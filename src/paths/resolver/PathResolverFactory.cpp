@@ -2,12 +2,12 @@
 // Created by jusra on 17-1-2026.
 //
 
-#include "pathing/resolver/PathResolverFactory.hpp"
+#include "paths/resolver/PathResolverFactory.hpp"
 
 #ifdef _WIN32
-#include "pathing/resolver/WindowsPathResolver.hpp"
+#include "paths/resolver/WindowsPathResolver.hpp"
 #else
-#include "pathing/resolver/UnixPathResolver.hpp"
+#include "paths/resolver/UnixPathResolver.hpp"
 #endif
 
 std::unique_ptr<IPathResolver> PathResolverFactory::create() {

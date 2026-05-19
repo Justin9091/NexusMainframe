@@ -1,4 +1,4 @@
-#include "Result/Result.hpp"
+#include "result/Result.hpp"
 #include <nlohmann/json.hpp>
 
 Result::Result(int httpStatus, std::string message)

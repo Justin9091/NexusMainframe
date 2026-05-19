@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "Modules/IModule.hpp"
+#include "modules/IModule.hpp"
 
 /**
  * @brief RAII owner for a single loaded dynamic module.

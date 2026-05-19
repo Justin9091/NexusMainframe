@@ -5,7 +5,7 @@
 #include "rooms/Room.hpp"
 #include "rooms/RoomRegistry.hpp"
 #include "services/DeviceService.hpp"
-#include "Result/Result.hpp"
+#include "result/Result.hpp"
 #include <nlohmann/json.hpp>
 
 /**

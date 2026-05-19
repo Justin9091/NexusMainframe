@@ -2,13 +2,13 @@
 // Created by jusra on 15-1-2026.
 //
 
-#include "Modules/operations/ModuleOperationsFactory.hpp"
+#include "modules/operations/ModuleOperationsFactory.hpp"
 
 
 #ifdef _WIN32
-    #include "Modules/operations/WindowsModuleOperations.hpp"
+    #include "modules/operations/WindowsModuleOperations.hpp"
 #else
-    #include "Modules/operations/LinuxModuleOperations.hpp"
+    #include "modules/operations/LinuxModuleOperations.hpp"
 #endif
 
 std::shared_ptr<IModuleOperations> ModuleOperationsFactory::create() {

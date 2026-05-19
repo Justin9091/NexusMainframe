@@ -1,6 +1,6 @@
 #pragma once
-#include <Modules/IModule.hpp>
-#include <Event/EventBus.hpp>
+#include <modules/IModule.hpp>
+#include <event/EventBus.hpp>
 #include "cast/CastDevice.hpp"
 #include <map>
 #include <mutex>

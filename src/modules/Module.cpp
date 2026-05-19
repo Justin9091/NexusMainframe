@@ -1,4 +1,4 @@
-#include "Modules/Module.hpp"
+#include "modules/Module.hpp"
 
 Module::Module(std::string name, std::string path,
                std::shared_ptr<IModule> instance,

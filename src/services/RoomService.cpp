@@ -1,6 +1,6 @@
 #include "services/RoomService.hpp"
 #include "services/DeviceService.hpp"
-#include "pathing/PathManager.hpp"
+#include "paths/PathManager.hpp"
 #include <random>
 #include <sstream>
 #include <iomanip>

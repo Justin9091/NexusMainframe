@@ -4,7 +4,7 @@
 #include "IService.hpp"
 #include "devices/Device.hpp"
 #include "devices/DeviceRegistry.hpp"
-#include "Result/Result.hpp"
+#include "result/Result.hpp"
 #include <nlohmann/json.hpp>
 
 /**

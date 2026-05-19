@@ -1,7 +1,7 @@
 
-#include "Modules/ModuleLoader.hpp"
-#include "Modules/operations/ModuleOperationsFactory.hpp"
-#include "pathing/PathManager.hpp"
+#include "modules/ModuleLoader.hpp"
+#include "modules/operations/ModuleOperationsFactory.hpp"
+#include "paths/PathManager.hpp"
 
 #include <iostream>
 

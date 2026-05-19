@@ -1,8 +1,8 @@
 #ifndef NEXUSCORE_LOADEDMODULELISTADAPTER_HPP
 #define NEXUSCORE_LOADEDMODULELISTADAPTER_HPP
 
-#include "config/Adapter/IConfigAdapter.hpp"
-#include "Modules/ModuleEntry.hpp"
+#include "config/adapter/IConfigAdapter.hpp"
+#include "modules/ModuleEntry.hpp"
 #include <nlohmann/json.hpp>
 #include <vector>
 

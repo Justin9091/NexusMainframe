@@ -5,7 +5,7 @@
 #ifndef NEXUSCORE_CONFIGPROVIDERFACTORY_HPP
 #define NEXUSCORE_CONFIGPROVIDERFACTORY_HPP
 
-#include "Provider/ConfigProvider.hpp"
+#include "provider/ConfigProvider.hpp"
 
 /**
  * @brief Factory that creates a ConfigProvider pre-loaded from a JSON file.
