@@ -9,7 +9,7 @@
 #include <thread>
 #include <atomic>
 #include <vector>
-#include "../Event/EventBus.hpp"
+#include "../event/EventBus.hpp"
 
 /**
  * @brief Lightweight MQTT 3.1.1 client with EventBus integration.

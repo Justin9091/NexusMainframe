@@ -1,7 +1,7 @@
 #include "http/controllers/ConfigController.hpp"
 #include "server/HttpMethod.hpp"
-#include "pathing/PathManager.hpp"
-#include "Result/Result.hpp"
+#include "paths/PathManager.hpp"
+#include "result/Result.hpp"
 #include <nlohmann/json.hpp>
 
 ConfigController::ConfigController(NexusConfig& config)

@@ -2,9 +2,9 @@
 // Created by jusra on 17-1-2026.
 //
 
-#include "pathing/resolver/UnixPathResolver.hpp"
+#include "paths/resolver/UnixPathResolver.hpp"
 
-#include "pathing/PathValidator.hpp"
+#include "paths/PathValidator.hpp"
 
 
 std::filesystem::path UnixPathResolver::getNexusPath() const {

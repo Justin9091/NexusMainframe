@@ -1,5 +1,5 @@
 #pragma once
-#include "Result/Result.hpp"
+#include "result/Result.hpp"
 
 /**
  * @brief Result specialisation with module-specific factory methods.

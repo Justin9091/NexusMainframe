@@ -3,16 +3,16 @@
 #       enable_testing() is called from the root when NEXUS_BUILD_TESTS=ON.
 
 add_executable(nexus_tests
-        Event/EventBusTests.cpp
-        Result/ResultTests.cpp
-        Result/ModuleResultTests.cpp
+        event/EventBusTests.cpp
+        result/ResultTests.cpp
+        result/ModuleResultTests.cpp
         devices/DeviceTests.cpp
         devices/DeviceRegistryTests.cpp
         rooms/RoomTests.cpp
         rooms/RoomRegistryTests.cpp
         config/NexusConfigTests.cpp
         config/JsonConfigSourceTests.cpp
-        Scheduler/SchedulerTests.cpp
+        scheduler/SchedulerTests.cpp
 )
 
 # ── Build next to nexus_core so all DLLs are in the same directory ────────────

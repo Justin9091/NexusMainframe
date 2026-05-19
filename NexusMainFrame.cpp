@@ -1,6 +1,6 @@
 #include "NexusMainFrame.hpp"
-#include "pathing/PathManager.hpp"
-#include "Event/EventBus.hpp"
+#include "paths/PathManager.hpp"
+#include "event/EventBus.hpp"
 #include "services/ModuleService.hpp"
 #include "services/MqttService.hpp"
 #include "services/HttpService.hpp"

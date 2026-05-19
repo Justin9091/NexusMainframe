@@ -18,6 +18,7 @@ func main() {
 	root.PersistentFlags().StringVar(&baseURL, "host", "http://localhost:8080", "NexusMainFrame host URL")
 
 	root.AddCommand(commands.NewModulesCmd(&baseURL))
+	root.AddCommand(commands.NewModuleCmd())
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)

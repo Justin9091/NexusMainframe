@@ -11,14 +11,12 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <filesystem>
+#include <algorithm>
 
 #include "IModuleScanner.hpp"
-#include "Modules/IModule.hpp"
-#include "Modules/operations/ModuleOperationsFactory.hpp"
-
-#include <filesystem>
-#include <unordered_set>
-#include <algorithm>
+#include "modules/IModule.hpp"
+#include "modules/operations/ModuleOperationsFactory.hpp"
 
 
 namespace fs = std::filesystem;

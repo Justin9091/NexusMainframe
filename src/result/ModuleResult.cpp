@@ -1,4 +1,4 @@
-#include "Result/ModuleResult.hpp"
+#include "result/ModuleResult.hpp"
 
 ModuleResult ModuleResult::alreadyLoaded(const std::string& name) {
     return {409, "Module '" + name + "' is already loaded"};

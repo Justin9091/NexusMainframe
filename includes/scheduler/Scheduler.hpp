@@ -7,7 +7,7 @@
 #include <croncpp.h>
 #include <string>
 
-#include "Task/ITask.hpp"
+#include "task/ITask.hpp"
 
 /**
  * @brief Internal descriptor for a cron-scheduled task.

@@ -2,9 +2,9 @@
 // Created by jusra on 17-1-2026.
 //
 
-#include "pathing/resolver/WindowsPathResolver.hpp"
+#include "paths/resolver/WindowsPathResolver.hpp"
 
-#include "pathing/PathValidator.hpp"
+#include "paths/PathValidator.hpp"
 
 std::filesystem::path WindowsPathResolver::getNexusPath() const {
     const char* userProfile = std::getenv("USERPROFILE");

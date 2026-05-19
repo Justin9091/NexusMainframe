@@ -2,10 +2,10 @@
 // Created by jusra on 17-1-2026.
 //
 // PathManager.cpp
-#include "pathing/PathManager.hpp"
-#include "pathing/resolver/PathResolverFactory.hpp"
+#include "paths/PathManager.hpp"
+#include "paths/resolver/PathResolverFactory.hpp"
 #include "exceptions/PathResolutionException.hpp"
-#include "pathing/PathValidator.hpp"
+#include "paths/PathValidator.hpp"
 
 PathManager& PathManager::getInstance() {
     static PathManager instance;

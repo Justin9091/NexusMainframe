@@ -1,6 +1,6 @@
 #include "services/DeviceService.hpp"
-#include "pathing/PathManager.hpp"
-#include "Event/EventBus.hpp"
+#include "paths/PathManager.hpp"
+#include "event/EventBus.hpp"
 #include <random>
 #include <sstream>
 #include <iomanip>

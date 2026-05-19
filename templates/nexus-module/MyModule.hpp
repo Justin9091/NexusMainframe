@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Modules/IModule.hpp"
+#include "modules/IModule.hpp"
 
 // Hernoem deze class naar je module-naam.
 class MyModule final : public IModule {

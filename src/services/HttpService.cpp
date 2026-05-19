@@ -1,5 +1,5 @@
 #include "services/HttpService.hpp"
-#include "Event/EventBus.hpp"
+#include "event/EventBus.hpp"
 
 HttpService::HttpService(ModuleService& moduleSvc, MqttService& mqttSvc, Scheduler& scheduler,
                          DeviceService& deviceSvc, RoomService& roomSvc,

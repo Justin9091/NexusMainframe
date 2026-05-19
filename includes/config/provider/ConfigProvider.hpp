@@ -10,9 +10,9 @@
 #include <optional>
 #include <typeindex>
 
-#include "config/Adapter/IConfigAdapter.hpp"
-#include "config/Source/IConfigSource.hpp"
-#include "config/Source/JsonConfigSource.hpp"
+#include "config/adapter/IConfigAdapter.hpp"
+#include "config/source/IConfigSource.hpp"
+#include "config/source/JsonConfigSource.hpp"
 /**
  * @brief Type-safe configuration store backed by a file source and typed adapters.
  *

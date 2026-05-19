@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <string>
 
-#include "../../includes/config/Source/JsonConfigSource.hpp"
+#include "../../includes/config/source/JsonConfigSource.hpp"
 
 ConfigProvider ConfigProviderFactory::create(const std::string &filepath) {
     auto ext = std::filesystem::path(filepath).extension().string();

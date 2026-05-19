@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 #include "IService.hpp"
-#include "Modules/ModuleManager.hpp"
-#include "Result/Result.hpp"
+#include "modules/ModuleManager.hpp"
+#include "result/Result.hpp"
 
 /**
  * @brief IService facade over ModuleManager, exposing module lifecycle via the service API.

@@ -1,5 +1,5 @@
 #include "services/WsService.hpp"
-#include "Event/EventBus.hpp"
+#include "event/EventBus.hpp"
 
 #include <nlohmann/json.hpp>
 #include <iostream>

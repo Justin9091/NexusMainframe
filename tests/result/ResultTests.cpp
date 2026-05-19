@@ -1,5 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
-#include "Result/Result.hpp"
+#include "result/Result.hpp"
 #include <nlohmann/json.hpp>
 
 TEST_CASE("Result factory methods return correct HTTP status", "[result]") {

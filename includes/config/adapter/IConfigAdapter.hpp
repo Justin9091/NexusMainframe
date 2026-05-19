@@ -2,7 +2,7 @@
 #ifndef NEXUSCORE_ICONFIGADAPTER_HPP
 #define NEXUSCORE_ICONFIGADAPTER_HPP
 #include "nlohmann/json.hpp"
-#include "config/Source/IConfigSource.hpp"
+#include "config/source/IConfigSource.hpp"
 #include "nlohmann/json.hpp"
 
 /**

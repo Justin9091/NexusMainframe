@@ -4,7 +4,7 @@
 #include <atomic>
 #include <thread>
 #include "includes/services/IService.hpp"
-#include "Scheduler/Scheduler.hpp"
+#include "scheduler/Scheduler.hpp"
 #include "config/NexusConfig.hpp"
 
 /**

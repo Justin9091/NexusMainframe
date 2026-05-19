@@ -11,7 +11,7 @@ set(FETCHCONTENT_BASE_DIR ${CMAKE_BINARY_DIR}/_deps_cache)
 # ─────────────────────────────────────────────────────────────
 string(TIMESTAMP NEXUS_CONFIGURE_START_TIME "%s")
 
-message(STATUS "⏱ Nexus configure started")
+message(STATUS "[nexus] configure started")
 
 # ─────────────────────────────────────────────────────────────
 # Helper: system package or FetchContent + timing
@@ -22,7 +22,7 @@ macro(nexus_find_or_fetch)
     find_package(${FOF_PACKAGE} ${FOF_VERSION} QUIET)
 
     if(NOT ${FOF_PACKAGE}_FOUND)
-        message(STATUS "⏳ [deps] fetching ${FOF_PACKAGE} (${FOF_GIT_TAG})")
+        message(STATUS "fetching [deps] fetching ${FOF_PACKAGE} (${FOF_GIT_TAG})")
 
         string(TIMESTAMP _start "%s")
 
@@ -37,10 +37,10 @@ macro(nexus_find_or_fetch)
         string(TIMESTAMP _end "%s")
         math(EXPR _duration "${_end} - ${_start}")
 
-        message(STATUS "⏱ [deps] ${FOF_PACKAGE} took ${_duration}s")
+        message(STATUS "[time] [deps] ${FOF_PACKAGE} took ${_duration}s")
 
     else()
-        message(STATUS "✔ [deps] ${FOF_PACKAGE} found system")
+        message(STATUS "found [deps] ${FOF_PACKAGE} found system")
     endif()
 endmacro()
 
@@ -100,7 +100,7 @@ nexus_find_or_fetch(
 find_package(CURL QUIET)
 
 if(NOT CURL_FOUND)
-    message(STATUS "⏳ [deps] curl not found → building from source")
+    message(STATUS "fetching [deps] curl not found → building from source")
 
     string(TIMESTAMP _curl_start "%s")
 
@@ -136,7 +136,7 @@ if(NOT CURL_FOUND)
     string(TIMESTAMP _curl_end "%s")
     math(EXPR _curl_time "${_curl_end} - ${_curl_start}")
 
-    message(STATUS "⏱ curl build took ${_curl_time}s")
+    message(STATUS "[time] curl build took ${_curl_time}s")
 endif()
 
 # ─────────────────────────────────────────────────────────────
@@ -168,5 +168,5 @@ math(EXPR NEXUS_CONFIGURE_DURATION
 )
 
 message(STATUS "────────────────────────────")
-message(STATUS "⏱ Configure time: ${NEXUS_CONFIGURE_DURATION}s")
+message(STATUS "[time] Configure time: ${NEXUS_CONFIGURE_DURATION}s")
 message(STATUS "────────────────────────────")
