@@ -5,6 +5,8 @@
 #ifndef NEXUSCORE_ITASK_HPP
 #define NEXUSCORE_ITASK_HPP
 
+#include <string_view>
+
 /**
  * @brief Interface for tasks that can be scheduled via the Scheduler.
  *
@@ -23,6 +25,8 @@ public:
 
     /** @brief Called by the Scheduler when the cron expression fires. */
     virtual void execute() = 0;
+
+    virtual std::string_view name() const noexcept { return {}; }
 };
 
 

@@ -13,6 +13,7 @@ add_executable(nexus_tests
         config/NexusConfigTests.cpp
         config/JsonConfigSourceTests.cpp
         scheduler/SchedulerTests.cpp
+        task/EventTaskTriggerTests.cpp
 )
 
 # ── Build next to nexus_core so all DLLs are in the same directory ────────────
