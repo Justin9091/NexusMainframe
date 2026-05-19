@@ -50,7 +50,11 @@ include(cmake/GoCLI.cmake)
 # ─────────────────────────────────────────────
 # CORE LIBRARY
 # ─────────────────────────────────────────────
-add_library(nexus_core SHARED)
+add_library(nexus_core SHARED
+        includes/task/EventTask.hpp
+        src/task/EventTask.cpp
+        includes/trigger/EventTrigger.hpp
+        src/trigger/EventTrigger.cpp)
 
 target_sources(nexus_core PRIVATE
         src/event/EventBus.cpp
